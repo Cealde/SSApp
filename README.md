@@ -1,6 +1,6 @@
 # SSApp - FastAPI + Uvicorn + HTML/CSS/JS Template
 
-A starter project template featuring a FastAPI backend with Uvicorn server, static HTML (`pages/`), CSS, and JavaScript frontend, and an AI assistant service module placeholder.
+A starter project template featuring a FastAPI backend with Uvicorn server, static HTML (`pages/`), CSS, and JavaScript frontend.
 
 ## Project Layout
 
@@ -16,7 +16,6 @@ A starter project template featuring a FastAPI backend with Uvicorn server, stat
 │       ├── __init__.py
 │       ├── main.py
 │       ├── config.py
-│       ├── ai_service.py
 │       └── api/
 │           ├── __init__.py
 │           └── routes.py
