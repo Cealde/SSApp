@@ -1,41 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const statusEl = document.getElementById('status');
-    const sendBtn = document.getElementById('send-btn');
-    const messageInput = document.getElementById('message-input');
-    const responseEl = document.getElementById('response');
+    const form = document.getElementById('user-form');
+    const input = document.getElementById('text-input');
+    const output = document.getElementById('output');
 
-    // Fetch backend status on page load
-    fetch('/api/status')
-        .then(res => res.json())
-        .then(data => {
-            statusEl.textContent = `Status: ${data.message}`;
-        })
-        .catch(err => {
-            statusEl.textContent = 'Failed to connect to backend';
-            console.error('Error fetching status:', err);
-        });
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
 
-    // Send message to backend
-    sendBtn.addEventListener('click', () => {
-        const message = messageInput.value.trim();
-        if (!message) return;
-
-        responseEl.textContent = 'Sending...';
-
-        fetch('/api/chat', {
+        fetch('/api/submit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ text })
         })
             .then(res => res.json())
             .then(data => {
-                responseEl.textContent = `Backend response: ${data.response}`;
+                output.textContent = data.message;
             })
             .catch(err => {
-                responseEl.textContent = 'Error sending message';
-                console.error('Error in chat:', err);
+                output.textContent = 'Error connecting to backend server.';
+                console.error('Error:', err);
             });
     });
 });

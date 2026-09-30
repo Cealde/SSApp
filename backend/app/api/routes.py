@@ -4,14 +4,14 @@ from backend.app.ai_service import ai_service
 
 router = APIRouter()
 
-class MessageRequest(BaseModel):
-    message: str
+class TextPayload(BaseModel):
+    text: str
 
-@router.get("/status")
-async def get_status():
-    return {"status": "ok", "message": "Backend connected successfully!"}
-
-@router.post("/chat")
-async def chat_endpoint(payload: MessageRequest):
-    response = await ai_service.generate_response(payload.message)
-    return {"response": response}
+@router.post("/submit")
+async def submit_text(payload: TextPayload):
+    # Process text and return "welcome, <inputted text>"
+    ai_status = await ai_service.generate_response(payload.text)
+    return {
+        "message": f"welcome, {payload.text}",
+        "ai_status": ai_status
+    }
