@@ -9,3 +9,8 @@ class TextPayload(BaseModel):
 @router.post("/submit")
 async def submit_text(payload: TextPayload):
     return {"message": f"welcome, {payload.text}"}
+
+@router.post("/give")
+async def submit_text(payload: TextPayload):
+    n = len(payload.text)
+    return {"message": f"Testing THIHNG, {payload.text} length is: {n}"}

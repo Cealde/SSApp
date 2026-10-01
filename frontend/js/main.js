@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = input.value.trim();
         if (!text) return;
 
-        fetch('/api/submit', {
+        fetch('/api/give', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
