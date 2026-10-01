@@ -7,11 +7,21 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    
     <form id="user-form">
-        <input type="text" id="text-input" placeholder="Enter text" required>
-        <input type="file" id="file-input">
-        <button type="submit">Submit</button>
+        <input type="text" id="text-input" placeholder="Enter text">
+
+        <input
+            type="file"
+            id="file-input"
+            name="files"
+            accept="application/pdf"
+            multiple
+        >
+
+        <button type="submit">Send</button>
     </form>
+
     <p id="output"></p>
 
     <script src="/js/main.js"></script>

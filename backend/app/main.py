@@ -9,11 +9,8 @@ app = FastAPI(title="SSApp")
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
-app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
-app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
-
 app.include_router(api_router, prefix="/api")
 
-@app.get("/")
-async def serve_index():
-    return FileResponse(FRONTEND_DIR / "pages" / "index.html")
+app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
+app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+app.mount("/",    StaticFiles(directory=FRONTEND_DIR / "pages", html=True), name="pages")
