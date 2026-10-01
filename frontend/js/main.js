@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        const formData = new FormData(form);
+        const file = formData.get(document.getElementById('file-input'));
+
+        
+
+
+
+
         const text = input.value.trim();
         if (!text) return;
 
