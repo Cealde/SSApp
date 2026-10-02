@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
 from typing import List
+import os
 
 from backend.app.services.pptx_optimize import (
     optimize_pptx,
@@ -11,9 +12,28 @@ router = APIRouter()
 
 PDF_MIME = "application/pdf"
 PPTX_MIMES = {
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  
-    "application/vnd.ms-powerpoint",                                             
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.ms-powerpoint",
 }
+
+AUDIO_EXTS = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus", ".wma"}
+VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".wmv", ".flv", ".m4v"}
+
+
+def classify(filename: str, ctype: str) -> str:
+    """Return 'audio' | 'video' | 'pdf' | 'pptx' | 'unknown'."""
+    ext = os.path.splitext(filename or "")[1].lower()
+    ctype = (ctype or "").lower()
+
+    if ctype == PDF_MIME or ext == ".pdf":
+        return "pdf"
+    if ctype in PPTX_MIMES or ext in {".pptx", ".ppt"}:
+        return "pptx"
+    if ctype.startswith("audio/") or ext in AUDIO_EXTS:
+        return "audio"
+    if ctype.startswith("video/") or ext in VIDEO_EXTS:
+        return "video"
+    return "unknown"
 
 
 class TextPayload(BaseModel):
@@ -38,21 +58,18 @@ async def give_files(
 ):
     received = []
 
-    for file in files:
-        contents = await file.read()
-        ctype = (file.content_type or "").lower()
+    for file in files:                                      
+        contents = await file.read()                         
+        kind = classify(file.filename, file.content_type)    
+                                                             
+        if kind == "pdf":                                    
+            received.append({                                
+                "type": "pdf",                               
+                "filename": file.filename,                  
+                "size_bytes": len(contents),                 
+            })                                               
 
-        # pdf
-        if ctype == PDF_MIME:
-            # pdf processing
-            received.append({
-                "type": "pdf",
-                "filename": file.filename,
-                "size_bytes": len(contents),
-            })
-
-        # ppt
-        elif ctype in PPTX_MIMES:
+        elif kind == "pptx":
             result = optimize_pptx(
                 pptx_bytes=contents,
                 filename=file.filename,
@@ -67,11 +84,26 @@ async def give_files(
                 "images": [i.model_dump() for i in result.images],
             })
 
-        # other
+        elif kind == "audio":
+            received.append({
+                "type": "audio",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
+
+        elif kind == "video":
+            received.append({
+                "type": "video",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
+
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported file type: {ctype} ({file.filename})",
+                detail=f"Unsupported file type: {file.content_type} ({file.filename})",
             )
 
     return {

@@ -101,6 +101,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.appendChild(slide);
                 }
             }
+            if (f.type === 'audio') {
+                const p = document.createElement('p');
+                p.textContent = `Audio (${f.content_type}) — ${f.size_bytes} bytes`;
+                card.appendChild(p);
+
+                const url = URL.createObjectURL(
+                    new Blob([])
+                );
+            }
+
+            if (f.type === 'video') {
+                const p = document.createElement('p');
+                p.textContent = `Video (${f.content_type}) — ${f.size_bytes} bytes`;
+                card.appendChild(p);
+            }
 
             output.appendChild(card);
         }
