@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-box { max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+        input, button { padding: 10px; font-size: 14px; }
+        button { cursor: pointer; }
+        #message { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Login / Sign Up</h2>
+
+    <div class="form-box">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        
+        <button onclick="handleAuth('/api/auth/login')">Log In</button>
+        <button onclick="handleAuth('/api/auth/signup')">Sign Up</button>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        async function handleAuth(endpoint) {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+
+            if (!email || !password) {
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "Please fill in both email and password.";
+                return;
+            }
+
+            messageDiv.style.color = "blue";
+            messageDiv.innerText = "Processing request...";
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    messageDiv.style.color = "red";
+                    messageDiv.innerText = "Error: " + (result.detail || JSON.stringify(result));
+                    return;
+                }
+
+                messageDiv.style.color = "green";
+
+                // Extract access token if present
+                const token = result.access_token 
+                    || (result.data && result.data.access_token)
+                    || (result.data && result.data.session && result.data.session.access_token);
+
+                if (token) {
+                    localStorage.setItem('access_token', token);
+                }
+
+                if (endpoint.includes('signup') && !token) {
+                    // Sign up succeeded but email confirmation is enabled in Supabase
+                    messageDiv.innerText = "Sign up successful! Please check your email to confirm your account, then log in.";
+                } else {
+                    messageDiv.innerText = "Login successful! Redirecting to index...";
+                    // Redirect to index page
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 600);
+                }
+
+            } catch (err) {
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "Network / Server Error: " + err.message;
+            }
+        }
+    </script>
+
+</body>
+</html>
