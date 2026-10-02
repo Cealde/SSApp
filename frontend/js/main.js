@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error:', err);
             });
     });
+
     fetch('/api/give-code', {
         method: 'POST',
     })

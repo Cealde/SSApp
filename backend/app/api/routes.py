@@ -10,6 +10,11 @@ router = APIRouter()
 class TextPayload(BaseModel):
     text: str
 
+@router.post("/give")
+async def submit_text(payload: TextPayload):
+    n = len(payload.text)
+    return {"message": f"Testing THIHNG, {payload.text} length is: {n}"}
+
 @router.post("/give-code")
 @router.get("/give-code")
 async def get_html():
