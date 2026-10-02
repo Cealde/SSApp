@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // pdf appended to files and list into backend
+
         const formData = new FormData();
         formData.append('text', text);
         for (const file of files) {
-            formData.append('files', file);   // must match backend parameter name
+            formData.append('files', file);
         }
 
         fetch('/api/give-files', {
@@ -35,4 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error:', err);
             });
     });
+
+
+
 });
+
+function createSubPage(htmlCode) {
+    const mainBox = document.createElement('div');
+    const htmlBox = document.createElement('iframe');
+
+    htmlBox.style.height = '100%';
+    htmlBox.style.width = '100%';
+    htmlBox.style.border = '1px solid black'
+
+    mainBox.style.height = '50%';
+    mainBox.style.width = '50%';
+
+    mainBox.appendChild(htmlBox);
+
+    const doc = htmlBox.document || htmlBox.contentWindow.document;
+
+    doc.open();
+    doc.write(htmlCode);
+    doc.close();
+}
