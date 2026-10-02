@@ -19,6 +19,8 @@ class OptimizedPDFResult(BaseModel):
     output_format: Literal["markdown", "binary_pdf"]
     optimized_payload: str | bytes
 
+
+#optimization function
 def optimize_pdf(
         pdf_bytes: bytes, filename: str, config: PDFOptimizationConfig
 ) -> OptimizedPDFResult:
