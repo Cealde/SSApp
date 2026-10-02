@@ -1,11 +1,42 @@
+import os
 from typing import List
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from backend.app.processing.file_processing import optimize_pdf, PDFOptimizationConfig
 from backend.app.processing.file_staging import pdfStaging
+from backend.app.services.pptx_optimize import (
+    optimize_pptx,
+    PPTXOptimizationConfig,
+)
 
 router = APIRouter()
+
+PDF_MIME = "application/pdf"
+PPTX_MIMES = {
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.ms-powerpoint",
+}
+
+AUDIO_EXTS = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus", ".wma"}
+VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".wmv", ".flv", ".m4v"}
+
+
+def classify(filename: str, ctype: str) -> str:
+    """Return 'audio' | 'video' | 'pdf' | 'pptx' | 'unknown'."""
+    ext = os.path.splitext(filename or "")[1].lower()
+    ctype = (ctype or "").lower()
+
+    if ctype == PDF_MIME or ext == ".pdf":
+        return "pdf"
+    if ctype in PPTX_MIMES or ext in {".pptx", ".ppt"}:
+        return "pptx"
+    if ctype.startswith("audio/") or ext in AUDIO_EXTS:
+        return "audio"
+    if ctype.startswith("video/") or ext in VIDEO_EXTS:
+        return "video"
+    return "unknown"
+
 
 class TextPayload(BaseModel):
     text: str
@@ -27,29 +58,76 @@ async def give_files(
     files: List[UploadFile] = File(default=[]),
 ):
     staging = pdfStaging()
-    config = PDFOptimizationConfig(
+    pdf_config = PDFOptimizationConfig(
         max_pages=None,
         deflate_images=True,
         output_format="markdown",
     )
+    received = []
+
     for file in files:
         contents = await file.read()
-        
-        optimized_result = optimize_pdf(
-            pdf_bytes=contents,
-            filename=file.filename or "unknown.pdf",
-            config=config,
-        )
-        
+        kind = classify(file.filename or "", file.content_type or "")
 
-        staging.store(optimized_result)
+        if kind == "pdf":
+            optimized_result = optimize_pdf(
+                pdf_bytes=contents,
+                filename=file.filename or "unknown.pdf",
+                config=pdf_config,
+            )
+            staging.store(optimized_result)
+            received.append({
+                "type": "pdf",
+                "filename": file.filename,
+                "size_bytes": len(contents),
+            })
+
+        elif kind == "pptx":
+            result = optimize_pptx(
+                pptx_bytes=contents,
+                filename=file.filename or "unknown.pptx",
+                config=PPTXOptimizationConfig(max_slides=None, include_images=True),
+            )
+            received.append({
+                "type": "pptx",
+                "filename": result.filename,
+                "slide_count": result.slide_count,
+                "original_size_bytes": result.original_size_bytes,
+                "slides_text": [s.model_dump() for s in result.slides_text],
+                "images": [i.model_dump() for i in result.images],
+            })
+
+        elif kind == "audio":
+            received.append({
+                "type": "audio",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
+
+        elif kind == "video":
+            received.append({
+                "type": "video",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type} ({file.filename})",
+            )
 
     final_output = staging.give_to_ai(user_prompt=text)
 
     print("\n========== FINAL OUTPUT ==========")
     print(final_output)
     print("===================================\n")
+
     return {
-        "message": f"Processed {len(files)} PDF(s) successfully.",
+        "message": f"Processed {len(received)} file(s).",
+        "text": text,
+        "files": received,
         "final_output": final_output,
     }

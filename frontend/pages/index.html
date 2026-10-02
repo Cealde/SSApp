@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    
+
     <form id="user-form">
         <input type="text" id="text-input" placeholder="Enter text">
 
@@ -15,18 +15,15 @@
             type="file"
             id="file-input"
             name="files"
-            accept="application/pdf"
+            accept="application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,audio/*,video/*"
             multiple
         >
 
         <button type="submit">Send</button>
     </form>
 
-    <div id="sub-page">
-    </div>
-
-    <p id="output"></p>
-
+    <div id="sub-page"></div>
+    <div id="output"></div>
     <div id="query"></div>
 
     <script src="/js/main.js"></script>
