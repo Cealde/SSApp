@@ -70,8 +70,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (f.type === 'pdf') {
                 const p = document.createElement('p');
-                p.textContent = `PDF — ${f.size_bytes} bytes`;
+                p.textContent = `PDF — ${f.size_bytes} bytes, ${f.images ? f.images.length : 0} image(s)`;
                 card.appendChild(p);
+
+                if (f.images && f.images.length > 0) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'pdf-images';
+                    for (const img of f.images) {
+                        const el = document.createElement('img');
+                        el.src = `data:image/${img.ext};base64,${img.data_b64}`;
+                        el.alt = img.filename;
+                        el.className = 'slide-image';
+                        el.title = `Page ${img.page_number}: ${img.filename}`;
+                        imgContainer.appendChild(el);
+                    }
+                    card.appendChild(imgContainer);
+                }
             }
 
             if (f.type === 'pptx') {

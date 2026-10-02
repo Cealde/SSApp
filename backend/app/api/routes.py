@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from backend.app.processing.file_processing import optimize_pdf, PDFOptimizationConfig
 from backend.app.processing.file_staging import pdfStaging
-from backend.app.services.pptx_optimize import (
+from backend.app.processing.pptx_optimize import (
     optimize_pptx,
     PPTXOptimizationConfig,
 )
@@ -80,6 +80,8 @@ async def give_files(
                 "type": "pdf",
                 "filename": file.filename,
                 "size_bytes": len(contents),
+                "image_count": len(optimized_result.images),
+                "images": [img.model_dump() for img in optimized_result.images],
             })
 
         elif kind == "pptx":

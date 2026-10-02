@@ -19,6 +19,8 @@ class pdfStaging:
                     "size_before": f"{item.original_size_bytes / 1024:.1f} KB",
                     "size_after": f"{item.optimized_size_bytes / 1024:.1f} KB",
                     "format": item.output_format,
+                    "image_count": len(item.images),
+                    "images": [img.model_dump() for img in item.images],
                     "content": (
                         item.optimized_payload
                         if item.output_format == "markdown"
@@ -34,6 +36,7 @@ class pdfStaging:
             "batch_summary": [
                 {
                     "file": d["filename"],
+                    "images": d["image_count"],
                     "savings": f"{(1 - (item.optimized_size_bytes / max(item.original_size_bytes, 1))) * 100:.1f}%",
                 }
                 for item, d in zip(self.queue, prepared_documents)
