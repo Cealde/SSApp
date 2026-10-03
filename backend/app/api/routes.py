@@ -139,4 +139,5 @@ async def give_files(
         "text": text,
         "files": received,
         "final_output": final_output,
+        "ai_result": None,
     }
