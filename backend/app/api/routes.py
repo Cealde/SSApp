@@ -3,12 +3,12 @@ from typing import List
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from backend.app.processing.file_processing import optimize_pdf, PDFOptimizationConfig
-from backend.app.processing.file_staging import pdfStaging
+from backend.app.processing.pdf_optimization import optimize_pdf, PDFOptimizationConfig
 from backend.app.processing.pptx_optimize import (
     optimize_pptx,
     PPTXOptimizationConfig,
 )
+from backend.app.processing.file_staging import FileStaging
 
 router = APIRouter()
 
@@ -57,11 +57,16 @@ async def give_files(
     text: str = Form(""),
     files: List[UploadFile] = File(default=[]),
 ):
-    staging = pdfStaging()
+    staging = FileStaging()
     pdf_config = PDFOptimizationConfig(
         max_pages=None,
         deflate_images=True,
+        extract_images=True,
         output_format="markdown",
+    )
+    pptx_config = PPTXOptimizationConfig(
+        max_slides=None,
+        include_images=True,
     )
     received = []
 
@@ -88,13 +93,15 @@ async def give_files(
             result = optimize_pptx(
                 pptx_bytes=contents,
                 filename=file.filename or "unknown.pptx",
-                config=PPTXOptimizationConfig(max_slides=None, include_images=True),
+                config=pptx_config,
             )
+            staging.store(result)
             received.append({
                 "type": "pptx",
                 "filename": result.filename,
                 "slide_count": result.slide_count,
                 "original_size_bytes": result.original_size_bytes,
+                "image_count": len(result.images),
                 "slides_text": [s.model_dump() for s in result.slides_text],
                 "images": [i.model_dump() for i in result.images],
             })
@@ -123,12 +130,12 @@ async def give_files(
 
     final_output = staging.give_to_ai(user_prompt=text)
 
-    print("\n========== FINAL OUTPUT ==========")
+    print("\n========== FINAL OUTPUT (STAGING) ==========")
     print(final_output)
-    print("===================================\n")
+    print("============================================\n")
 
     return {
-        "message": f"Processed {len(received)} file(s).",
+        "message": f"Processed {len(received)} file(s) successfully.",
         "text": text,
         "files": received,
         "final_output": final_output,

@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('files', file);
         }
 
-        output.textContent = 'Processing...';
+        output.textContent = 'Processing files & optimizing images...';
 
         fetch('/api/give-files', {
             method: 'POST',
@@ -58,39 +58,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const summary = document.createElement('p');
         summary.textContent = data.message;
+        summary.style.fontWeight = 'bold';
         output.appendChild(summary);
 
+        // Display AI Staging Summary if available
+        if (data.final_output && data.final_output.batch_summary) {
+            const stagingSummary = document.createElement('div');
+            stagingSummary.className = 'staging-summary';
+            stagingSummary.style.background = '#f0f4f8';
+            stagingSummary.style.padding = '10px 15px';
+            stagingSummary.style.borderRadius = '6px';
+            stagingSummary.style.margin = '10px 0 20px 0';
+
+            const summaryTitle = document.createElement('h3');
+            summaryTitle.textContent = `AI Staging Batch (${data.final_output.total_files_processed} document(s) staged)`;
+            stagingSummary.appendChild(summaryTitle);
+
+            const list = document.createElement('ul');
+            for (const item of data.final_output.batch_summary) {
+                const li = document.createElement('li');
+                li.textContent = `${item.file} [${item.type.toUpperCase()}] — Images: ${item.images}, Size Savings: ${item.savings}`;
+                list.appendChild(li);
+            }
+            stagingSummary.appendChild(list);
+            output.appendChild(stagingSummary);
+        }
+
+        // Render Individual File Cards
         for (const f of data.files) {
             const card = document.createElement('div');
             card.className = 'file-card';
+            card.style.border = '1px solid #ddd';
+            card.style.borderRadius = '8px';
+            card.style.padding = '15px';
+            card.style.marginBottom = '15px';
 
             const heading = document.createElement('h2');
-            heading.textContent = `${f.filename} (${f.type})`;
+            heading.textContent = `${f.filename} (${f.type.toUpperCase()})`;
             card.appendChild(heading);
 
+            // PDF Card
             if (f.type === 'pdf') {
                 const p = document.createElement('p');
-                p.textContent = `PDF — ${f.size_bytes} bytes, ${f.images ? f.images.length : 0} image(s)`;
+                p.textContent = `PDF Size: ${f.size_bytes} bytes | Extracted Images: ${f.image_count || 0}`;
                 card.appendChild(p);
 
                 if (f.images && f.images.length > 0) {
                     const imgContainer = document.createElement('div');
                     imgContainer.className = 'pdf-images';
+                    imgContainer.style.display = 'flex';
+                    imgContainer.style.flexWrap = 'wrap';
+                    imgContainer.style.gap = '10px';
+                    imgContainer.style.marginTop = '10px';
+
                     for (const img of f.images) {
                         const el = document.createElement('img');
                         el.src = `data:image/${img.ext};base64,${img.data_b64}`;
                         el.alt = img.filename;
-                        el.className = 'slide-image';
-                        el.title = `Page ${img.page_number}: ${img.filename}`;
+                        el.className = 'pdf-image';
+                        el.style.maxWidth = '200px';
+                        el.style.borderRadius = '6px';
+                        el.style.border = '1px solid #ccc';
+                        el.title = `Page ${img.page_number}: ${img.filename} (${img.size_bytes} bytes)`;
                         imgContainer.appendChild(el);
                     }
                     card.appendChild(imgContainer);
                 }
             }
 
+            // PPTX Card
             if (f.type === 'pptx') {
                 const meta = document.createElement('p');
-                meta.textContent = `${f.slide_count} slide(s), ${f.images.length} image(s)`;
+                meta.textContent = `Slides: ${f.slide_count} | Extracted Images: ${f.images.length}`;
                 card.appendChild(meta);
 
                 const imgsBySlide = {};
@@ -101,14 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const s of f.slides_text) {
                     const slide = document.createElement('div');
                     slide.className = 'slide';
+                    slide.style.marginTop = '10px';
+                    slide.style.padding = '10px';
+                    slide.style.background = '#fafafa';
+                    slide.style.borderRadius = '6px';
 
-                    const h3 = document.createElement('h3');
+                    const h3 = document.createElement('h4');
                     h3.textContent = `Slide ${s.slide_number}`;
                     slide.appendChild(h3);
 
                     if (s.text) {
                         const pre = document.createElement('pre');
                         pre.className = 'slide-text';
+                        pre.style.whiteSpace = 'pre-wrap';
                         pre.textContent = s.text;
                         slide.appendChild(pre);
                     } else {
@@ -117,24 +161,38 @@ document.addEventListener('DOMContentLoaded', () => {
                         slide.appendChild(em);
                     }
 
-                    for (const img of (imgsBySlide[s.slide_number] || [])) {
-                        const el = document.createElement('img');
-                        el.src = `data:image/${img.ext};base64,${img.data_b64}`;
-                        el.alt = img.filename;
-                        el.className = 'slide-image';
-                        slide.appendChild(el);
+                    const slideImgs = imgsBySlide[s.slide_number] || [];
+                    if (slideImgs.length > 0) {
+                        const imgBox = document.createElement('div');
+                        imgBox.style.display = 'flex';
+                        imgBox.style.flexWrap = 'wrap';
+                        imgBox.style.gap = '8px';
+                        imgBox.style.marginTop = '8px';
+
+                        for (const img of slideImgs) {
+                            const el = document.createElement('img');
+                            el.src = `data:image/${img.ext};base64,${img.data_b64}`;
+                            el.alt = img.filename;
+                            el.style.maxWidth = '180px';
+                            el.style.borderRadius = '4px';
+                            el.style.border = '1px solid #ccc';
+                            imgBox.appendChild(el);
+                        }
+                        slide.appendChild(imgBox);
                     }
 
                     card.appendChild(slide);
                 }
             }
 
+            // Audio Card
             if (f.type === 'audio') {
                 const p = document.createElement('p');
                 p.textContent = `Audio (${f.content_type}) — ${f.size_bytes} bytes`;
                 card.appendChild(p);
             }
 
+            // Video Card
             if (f.type === 'video') {
                 const p = document.createElement('p');
                 p.textContent = `Video (${f.content_type}) — ${f.size_bytes} bytes`;
