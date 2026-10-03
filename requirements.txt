@@ -6,3 +6,4 @@ pypdf
 pymupdf
 python-multipart
 python-pptx
+httpx>=0.25.0
