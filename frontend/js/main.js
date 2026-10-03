@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('file-input');
     const output = document.getElementById('output');
 
+    createColorpalette(["#235E5E", "#558968", "#558968", "#EFECDE", "#381A1A"]);
+
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -32,10 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return res.json();
             })
             .then(data => {
-                // Clear temporary sending status
                 output.textContent = '';
-
-                // Only render/display a result when the AI provides something
                 const aiResult = data.ai_result || data.ai_response || data.code;
                 if (aiResult) {
                     if (
@@ -96,4 +95,22 @@ function createSubPage(htmlCode) {
 
     mainBox.appendChild(htmlBox);
     target.appendChild(mainBox);
+}
+
+function createColorpalette(colors) {
+
+    const palleteContainer = document.createElement('div');
+    palleteContainer.className = "palette";
+
+    colors.forEach(color => {
+        const sw = document.createElement('div');
+
+        sw.className = "sw";
+        sw.style.backgroundColor = color;
+
+        palleteContainer.appendChild(sw);
+    });
+
+    const target = document.getElementById('palette-container') || document.body;
+    target.appendChild(palleteContainer);
 }
