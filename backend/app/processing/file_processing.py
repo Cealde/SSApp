@@ -7,7 +7,7 @@ import pymupdf4llm
 from PIL import Image
 
 
-# Image data model for AI/frontend sendable payload
+#image data model for AI/frontend sendable payload
 class PDFImage(BaseModel):
     page_number: int
     filename: str
@@ -16,7 +16,7 @@ class PDFImage(BaseModel):
     data_b64: str
 
 
-# Config for the optimization engine
+#config for the optimization engine
 class PDFOptimizationConfig(BaseModel):
     max_pages: Optional[int] = None
     deflate_images: bool = True
@@ -26,7 +26,7 @@ class PDFOptimizationConfig(BaseModel):
     output_format: Literal["markdown", "binary_pdf"] = "markdown"
 
 
-# PDF result datatype for AI
+#PDF result datatype for AI
 class OptimizedPDFResult(BaseModel):
     filename: str
     original_size_bytes: int
@@ -118,7 +118,6 @@ def extract_and_optimize_pdf_images(
     return extracted_images
 
 
-# Optimization function
 def optimize_pdf(
     pdf_bytes: bytes, filename: str, config: PDFOptimizationConfig
 ) -> OptimizedPDFResult:
@@ -132,7 +131,6 @@ def optimize_pdf(
             else list(range(total_pages))
         )
 
-        # Check and extract optimized images
         extracted_images = extract_and_optimize_pdf_images(doc, pages_to_keep, config)
 
         if config.output_format == "markdown":

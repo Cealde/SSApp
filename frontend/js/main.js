@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
         summary.style.fontWeight = 'bold';
         output.appendChild(summary);
 
-        // Display AI Staging Summary if available
         if (data.final_output && data.final_output.batch_summary) {
             const stagingSummary = document.createElement('div');
             stagingSummary.className = 'staging-summary';
@@ -84,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             output.appendChild(stagingSummary);
         }
 
-        // Render Individual File Cards
         for (const f of data.files) {
             const card = document.createElement('div');
             card.className = 'file-card';
@@ -97,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
             heading.textContent = `${f.filename} (${f.type.toUpperCase()})`;
             card.appendChild(heading);
 
-            // PDF Card
             if (f.type === 'pdf') {
                 const p = document.createElement('p');
                 p.textContent = `PDF Size: ${f.size_bytes} bytes | Extracted Images: ${f.image_count || 0}`;
@@ -126,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // PPTX Card
             if (f.type === 'pptx') {
                 const meta = document.createElement('p');
                 meta.textContent = `Slides: ${f.slide_count} | Extracted Images: ${f.images.length}`;
@@ -185,14 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Audio Card
             if (f.type === 'audio') {
                 const p = document.createElement('p');
                 p.textContent = `Audio (${f.content_type}) — ${f.size_bytes} bytes`;
                 card.appendChild(p);
             }
 
-            // Video Card
             if (f.type === 'video') {
                 const p = document.createElement('p');
                 p.textContent = `Video (${f.content_type}) — ${f.size_bytes} bytes`;
