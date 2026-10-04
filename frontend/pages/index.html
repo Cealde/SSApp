@@ -4,16 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSApp</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <form id="user-form">
-        <input type="text" id="text-input" placeholder="Enter text" required>
-        <input type="file" id="file-input">
-        <button type="submit">Submit</button>
-    </form>
-    <p id="output"></p>
 
+    <form id="user-form">
+        <input type="text" id="text-input" placeholder="Enter text">
+
+        <input
+            type="file"
+            id="file-input"
+            name="files"
+            accept="application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,audio/*,video/*"
+            multiple>
+
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="palette-container"></div>
+    <div id="sub-page"></div>
+    <div id="output"></div>
+    <div id="query"></div>
+
+    <div id="mermaid-section">
+        <h2>Mermaid Diagram</h2>
+        <textarea id="mermaid-input" rows="8" placeholder="Enter mermaid code here..."></textarea>
+        <button id="render-mermaid" type="button">Render Diagram</button>
+        <div id="mermaid-output" class="mini-box"></div>
+    </div>
+
+    <script src="/js/mermaid.min.js"></script>
     <script src="/js/main.js"></script>
 </body>
 </html>

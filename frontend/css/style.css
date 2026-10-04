@@ -1,0 +1,100 @@
+.palette {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  border: none;
+  border-radius: 14px;
+  padding: 8px;
+  box-sizing: border-box;
+  margin: 15px 0;
+  background-color: rgba(26, 21, 14, 0.75);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.sw {
+  flex: 1;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+  border: none;
+}
+
+.sw:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.sw:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.font-container {
+  width: fit-content;
+  padding: 12px 18px;
+  height: fit-content;
+  border: none;
+  border-radius: 12px;
+  background: rgba(26, 21, 14, 0.8);
+  color: #fbf7ee;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+#mermaid-section {
+  margin-top: 24px;
+}
+
+#mermaid-input {
+  width: 100%;
+  max-width: 720px;
+  font-family: Consolas, Menlo, monospace;
+  font-size: 13px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(26, 21, 14, 0.85);
+  color: #fbf7ee;
+  resize: vertical;
+}
+
+#render-mermaid {
+  display: block;
+  margin: 8px 0 16px;
+  padding: 6px 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: #e2a221;
+  color: #110e08;
+  font-weight: 600;
+}
+
+.mini-box {
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 80px;
+  background: rgba(26, 21, 14, 0.75);
+  overflow: auto;
+  max-width: 720px;
+  color: #fbf7ee;
+}
+
+.mini-box svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  color: #ff6b6b;
+  font-family: Consolas, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+}

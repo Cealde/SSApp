@@ -1,0 +1,9 @@
+{
+  "automated_tests": 12,
+  "passed": 12,
+  "model_responses": "mocked",
+  "live_gemini_tested": false,
+  "windows_launcher_tested_on_windows": false,
+  "javascript_syntax_check": "passed",
+  "custom_model_training": false
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SatyaSethu Engine | Dashboard</title>
+    <meta
+      name="description"
+      content="SatyaSethu Engine workspace dashboard and projects."
+    />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+  </head>
+  <body class="dashboard-body">
+    <div class="page-glow glow-one" aria-hidden="true"></div>
+    <div class="page-glow glow-two" aria-hidden="true"></div>
+    <div class="page-glow glow-three" aria-hidden="true"></div>
+
+    <header class="dashboard-top-header">
+      <img src="/assets/logo.svg" alt="SatyaSethu Logo" class="brand-logo-white dashboard-logo" />
+      <h1 class="dashboard-engine-title">SatyaSetu Engine</h1>
+      <button type="button" class="dashboard-logout-btn" id="logoutBtn" aria-label="Log out" title="Log out">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </button>
+    </header>
+
+    <main class="dashboard-container">
+      <section class="top-cards-row">
+        <div class="bento-card greeting-card">
+          <div class="greeting-content">
+            <h2 class="greeting-title" id="greetingTitle">
+              <span id="greetingTimeWord">Good Afternoon</span>
+              <span id="greetingUserName" class="greeting-user"></span>
+            </h2>
+          </div>
+
+          <div class="greeting-footer">
+            <a href="/prompt.html" class="new-project-pill-btn" id="newProjectBtn">New Project</a>
+            <span class="corner-clock" id="cornerClock">8:23 AM</span>
+          </div>
+        </div>
+
+        <div class="bento-card org-card">
+          <div class="org-logo-card">
+            <img id="orgLogoImg" src="" alt="Organization Logo" class="org-logo-img" style="display: none;" />
+            <div id="orgLogoPlaceholder" class="org-logo-placeholder">
+              <span>[Organization<br />Logo]</span>
+            </div>
+          </div>
+          <span class="org-name-text" id="orgNameText">Unincorporated</span>
+        </div>
+      </section>
+      <section class="projects-section">
+        <h2 class="projects-heading">Pick up where you left off</h2>
+        <div class="projects-grid" id="projectsGrid">
+          <a href="/prompt.html" class="bento-card add-project-card" aria-label="Start new project">
+            <span class="add-project-plus">+</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script src="/js/dashboard.js"></script>
+  </body>
+</html>

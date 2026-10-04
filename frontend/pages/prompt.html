@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SathyaSethu | Prompt Workspace</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/css/prompt.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <!-- Ambient background glow matching warm gold/amber theme -->
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <div class="app-container">
+    <!-- Left Navigation & Sidebar -->
+    <aside class="left-sidebar">
+      <div class="brand-section">
+        <!-- 1. Icon (constant size regardless of its dimensions as an image) -->
+        <div class="brand-icon-wrapper" id="brandIconWrapper">
+          <img src="" alt="" class="brand-icon-img" id="brandIconImg" style="display:none;" />
+        </div>
+
+        <!-- 2. Organization Name under the icon -->
+        <div class="brand-text-wrapper" id="brandTextWrapper">
+          <span class="brand-text" id="brandText"></span>
+        </div>
+
+        <!-- 3. Dashboard Button under the organization name -->
+        <a href="/dashboard" class="dashboard-btn" id="dashboardBtn">
+          <span class="btn-arrow">◀</span>
+          <span>Dashboard</span>
+        </a>
+      </div>
+
+      <!-- Chat History Panel (pure text clickable items, no borders) -->
+      <nav class="chat-history-panel" aria-label="Chat History">
+        <h2 class="sidebar-title">Chat History</h2>
+        <ul class="chat-history-list" id="chatHistoryList">
+          <!-- Populated dynamically when chats occur -->
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="main-area">
+      <!-- Chat Conversation Log -->
+      <section class="chat-container" id="chatContainer">
+        <!-- Messages will be appended here dynamically -->
+      </section>
+
+      <!-- Interactive AI Selection Area (Hidden by default, attached to response window dynamically) -->
+      <div class="ai-selection-area" id="aiSelectionArea" style="display: none; margin: 0 0 16px 0; z-index: 10;">
+        <div class="selection-title">Choose Website Style</div>
+        <div id="paletteDisplay"></div>
+        <div id="fontDisplay"></div>
+        <button type="button" id="confirmSelectionBtn" class="dashboard-btn" style="margin-top: 12px; display: none; background: #e2a221; color: #0a0907; font-weight: 700;">Confirm Selection</button>
+      </div>
+
+      <!-- Bottom Prompt & File Upload Area (stuck to bottom, no border) -->
+      <form class="prompt-box-form" id="promptForm">
+        <div class="input-container">
+          <div class="attached-files-list" id="attachedFilesList"></div>
+          <textarea
+            id="promptInput"
+            class="prompt-textarea"
+            placeholder="What should we do today"
+            rows="2"
+          ></textarea>
+        </div>
+
+        <div class="prompt-actions">
+          <!-- File Upload Button with img icon, accepts any file format -->
+          <label class="file-upload-btn" title="Upload files" for="fileInput">
+            <img src="/assets/file-plus.svg" alt="Attach files" class="action-icon-img" />
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              aria-label="Upload files (any format)"
+            />
+          </label>
+
+          <!-- Unified Send / Stop Button -->
+          <button type="submit" class="submit-prompt-btn" id="submitBtn" aria-label="Send or Stop Prompt" title="Send Prompt">
+            <img src="/assets/send.svg" alt="Send" class="action-icon-img" id="submitBtnIcon" />
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <!-- Right Configuration Sidebar -->
+    <aside class="right-sidebar">
+      <h2 class="sidebar-title">Generation Settings</h2>
+      <div class="config-sidebar-content">
+        <div class="config-group">
+          <label class="config-label">Output Formats (Click to toggle)</label>
+          <div class="format-toggle-grid" id="formatToggleGrid" role="group" aria-label="Output Formats">
+            <button type="button" class="format-chip active" data-value="presentation" aria-pressed="true">
+              <span class="chip-check">✓</span>
+              <span class="chip-label">Presentation</span>
+            </button>
+            <button type="button" class="format-chip" data-value="website" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Website</span>
+            </button>
+            <button type="button" class="format-chip" data-value="mermaid" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Mermaid Diagram</span>
+            </button>
+            <button type="button" class="format-chip" data-value="advisory" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Advisory Document</span>
+            </button>
+            <button type="button" class="format-chip" data-value="exec_summary" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Executive Summary</span>
+            </button>
+            <button type="button" class="format-chip" data-value="video" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Video Package</span>
+            </button>
+            <button type="button" class="format-chip" data-value="linkedin" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">LinkedIn Post</span>
+            </button>
+            <button type="button" class="format-chip" data-value="twitter" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-label">Twitter/X Post</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Presentation Options (Visible when Presentation is toggled) -->
+        <div class="presentation-settings-panel" id="presentationSettingsPanel">
+          <div class="config-subgroup">
+            <label for="presTheme">Slide Theme</label>
+            <select id="presTheme">
+              <option value="amber" selected>Warm Amber (Dark)</option>
+              <option value="navy">Executive Navy (Dark)</option>
+              <option value="light">Minimalist (Light)</option>
+            </select>
+          </div>
+          <div class="config-subgroup">
+            <label for="presSlideCount">Slide Count</label>
+            <select id="presSlideCount">
+              <option value="auto" selected>Auto (Based on content)</option>
+              <option value="concise">Short (3-5 slides)</option>
+              <option value="standard">Standard (5-8 slides)</option>
+              <option value="detailed">In-depth (8-12 slides)</option>
+            </select>
+          </div>
+          <div class="config-subgroup">
+            <label>Output Format</label>
+            <div class="pres-badge-info">
+              <span>PowerPoint (.pptx) + Slide Deck</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-group">
+          <label for="outAudience">Target Audience</label>
+          <input type="text" id="outAudience" placeholder="e.g. Executives, General Public" />
+        </div>
+
+        <div class="config-group">
+          <label for="outTone">Tone</label>
+          <select id="outTone">
+            <option value="professional" selected>Professional</option>
+            <option value="casual">Casual</option>
+            <option value="persuasive">Persuasive</option>
+            <option value="informative">Informative</option>
+          </select>
+        </div>
+
+        <div class="config-group">
+          <label for="outLanguage">Language</label>
+          <input type="text" id="outLanguage" placeholder="e.g. English" value="English" />
+        </div>
+
+        <div class="config-group">
+          <label for="outLevel">Level of Detail</label>
+          <select id="outLevel">
+            <option value="concise">Concise</option>
+            <option value="standard" selected>Standard</option>
+            <option value="detailed">Detailed</option>
+            <option value="comprehensive">Comprehensive</option>
+          </select>
+        </div>
+
+        <div class="config-group">
+          <label for="outObjective">Communication Objective</label>
+          <input type="text" id="outObjective" placeholder="e.g. Inform, Persuade, Alert" />
+        </div>
+
+        <div class="config-group">
+          <label for="outStyle">Content Style</label>
+          <input type="text" id="outStyle" placeholder="e.g. Corporate, Modern" />
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/js/prompt.js"></script>
+</body>
+</html>

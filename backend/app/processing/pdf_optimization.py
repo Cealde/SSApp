@@ -1,13 +1,16 @@
-import base64
 import io
 from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel
 import pymupdf
-import pymupdf4llm
-from PIL import Image
+try:
+    import pymupdf4llm
+except ImportError:
+    pymupdf4llm = None
+
+from backend.app.processing.image_utils import optimize_image_bytes
 
 
-#image data model for AI/frontend sendable payload
+#image data tyoe for ai
 class PDFImage(BaseModel):
     page_number: int
     filename: str
@@ -16,7 +19,7 @@ class PDFImage(BaseModel):
     data_b64: str
 
 
-#config for the optimization engine
+#config for optimization
 class PDFOptimizationConfig(BaseModel):
     max_pages: Optional[int] = None
     deflate_images: bool = True
@@ -26,8 +29,9 @@ class PDFOptimizationConfig(BaseModel):
     output_format: Literal["markdown", "binary_pdf"] = "markdown"
 
 
-#PDF result datatype for AI
+#pdf datatype for ai
 class OptimizedPDFResult(BaseModel):
+    doc_type: Literal["pdf"] = "pdf"
     filename: str
     original_size_bytes: int
     optimized_size_bytes: int
@@ -35,32 +39,6 @@ class OptimizedPDFResult(BaseModel):
     output_format: Literal["markdown", "binary_pdf"]
     optimized_payload: str | bytes
     images: List[PDFImage] = []
-
-
-def _optimize_image_bytes(
-    image_bytes: bytes,
-    ext: str,
-    max_dim: int = 1600,
-    quality: int = 80,
-) -> tuple[bytes, str]:
-    try:
-        with Image.open(io.BytesIO(image_bytes)) as img:
-            format_lower = ext.lower().replace("jpg", "jpeg")
-            if format_lower == "jpeg" and img.mode in ("RGBA", "P", "LA"):
-                img = img.convert("RGB")
-
-            if max(img.size) > max_dim:
-                img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-
-            out_buf = io.BytesIO()
-            if format_lower == "jpeg" or (img.mode == "RGB" and format_lower not in ("png", "gif")):
-                img.save(out_buf, format="JPEG", quality=quality, optimize=True)
-                return out_buf.getvalue(), "jpeg"
-            else:
-                img.save(out_buf, format="PNG", optimize=True)
-                return out_buf.getvalue(), "png"
-    except Exception:
-        return image_bytes, ext
 
 
 def extract_and_optimize_pdf_images(
@@ -93,22 +71,19 @@ def extract_and_optimize_pdf_images(
                 raw_bytes = base_img.get("image", b"")
                 raw_ext = base_img.get("ext", "png")
 
-                #optimize and compress image bytes
-                optimized_bytes, final_ext = _optimize_image_bytes(
+                opt_bytes, final_ext, data_b64 = optimize_image_bytes(
                     image_bytes=raw_bytes,
                     ext=raw_ext,
                     max_dim=config.max_image_dim,
                     quality=config.image_quality,
                 )
 
-                data_b64 = base64.b64encode(optimized_bytes).decode("ascii")
-
                 extracted_images.append(
                     PDFImage(
                         page_number=page_number,
                         filename=f"page{page_number}_img{img_idx + 1}_{xref}.{final_ext}",
                         ext=final_ext,
-                        size_bytes=len(optimized_bytes),
+                        size_bytes=len(opt_bytes),
                         data_b64=data_b64,
                     )
                 )
@@ -118,8 +93,9 @@ def extract_and_optimize_pdf_images(
     return extracted_images
 
 
+# Optimization function
 def optimize_pdf(
-    pdf_bytes: bytes, filename: str, config: PDFOptimizationConfig
+    pdf_bytes: bytes, filename: str, config: PDFOptimizationConfig = PDFOptimizationConfig()
 ) -> OptimizedPDFResult:
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
 
@@ -134,9 +110,14 @@ def optimize_pdf(
         extracted_images = extract_and_optimize_pdf_images(doc, pages_to_keep, config)
 
         if config.output_format == "markdown":
-            extracted_text = pymupdf4llm.to_markdown(
-                doc, pages=pages_to_keep
-            ).strip()
+            if pymupdf4llm is not None:
+                extracted_text = pymupdf4llm.to_markdown(
+                    doc, pages=pages_to_keep
+                ).strip()
+            else:
+                extracted_text = "\n\n".join(
+                    doc[p].get_text() for p in pages_to_keep
+                ).strip()
 
             return OptimizedPDFResult(
                 filename=filename,
