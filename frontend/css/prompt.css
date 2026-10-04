@@ -302,6 +302,51 @@ html, body {
   display: block;
 }
 
+/* AI Selection Area (Palettes & Fonts) */
+.ai-selection-area {
+  background: var(--panel-strong);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.selection-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.selection-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.selection-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.selection-pill.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
 /* Bottom Prompt & Input Box - stuck to bottom, taller, NO borders */
 .prompt-box-form {
   background: var(--panel-strong);
@@ -426,6 +471,83 @@ html, body {
   filter: brightness(0) saturate(100%) invert(88%) sepia(50%) saturate(600%) hue-rotate(345deg);
 }
 
+.config-toggle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.config-toggle-btn:hover, .config-toggle-btn.active {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.config-panel {
+  width: 100%;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-group label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+.config-group select, .config-group input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.config-group select:focus, .config-group input:focus {
+  border-color: var(--accent);
+}
+
+.config-group select[multiple] {
+  height: 90px;
+}
+
+.config-group select option {
+  background: var(--bg-1);
+}
+
 .submit-prompt-btn {
   width: 48px;
   height: 48px;
@@ -458,6 +580,26 @@ html, body {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Glow Fade In Animation */
+.glow-fade-in {
+  animation: glowFadeIn 0.8s ease-out forwards;
+}
+
+@keyframes glowFadeIn {
+  0% {
+    opacity: 0;
+    text-shadow: 0 0 10px rgba(226, 162, 33, 0);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 15px rgba(226, 162, 33, 0.8);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 0 rgba(226, 162, 33, 0);
+  }
 }
 
 /* Scrollbar */

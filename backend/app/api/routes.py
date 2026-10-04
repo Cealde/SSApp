@@ -37,14 +37,37 @@ def classify(filename: str, ctype: str) -> str:
         return "video"
     return "unknown"
 
+from typing import List, Dict, Any, Optional
+import json
+from backend.app.ai.gemini_service import generate_content
 
 class TextPayload(BaseModel):
     text: str
+    config: Optional[Dict[str, Any]] = None
 
 @router.post("/give")
 async def submit_text(payload: TextPayload):
-    n = len(payload.text)
-    return {"message": f"Testing THIHNG, {payload.text} length is: {n}"}
+    config = payload.config or {}
+    staging_data = {"documents": []}
+    
+    try:
+        ai_result = await generate_content(payload.text, staging_data, config)
+        
+        # If it's step 1 of website generation, try parsing JSON
+        if "website" in config.get("formats", []) and "palette" not in config:
+            try:
+                # Attempt to parse json from markdown block if any
+                clean_json = ai_result.strip()
+                if clean_json.startswith('```json'):
+                    clean_json = clean_json.split('```json')[1].split('```')[0].strip()
+                parsed = json.loads(clean_json)
+                return {"ai_result": parsed, "message": "Select design options."}
+            except Exception as e:
+                pass
+
+        return {"ai_result": ai_result, "message": "Generated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/give-code")
 @router.get("/give-code")
@@ -55,8 +78,14 @@ async def get_html():
 @router.post("/give-files")
 async def give_files(
     text: str = Form(""),
+    config: str = Form("{}"),
     files: List[UploadFile] = File(default=[]),
 ):
+    try:
+        config_data = json.loads(config)
+    except:
+        config_data = {}
+        
     staging = FileStaging()
     pdf_config = PDFOptimizationConfig(
         max_pages=None,
@@ -130,14 +159,26 @@ async def give_files(
 
     final_output = staging.give_to_ai(user_prompt=text)
 
-    print("\n========== FINAL OUTPUT (STAGING) ==========")
-    print(final_output)
-    print("============================================\n")
-
-    return {
-        "message": f"Processed {len(received)} file(s) successfully.",
-        "text": text,
-        "files": received,
-        "final_output": final_output,
-        "ai_result": None,
-    }
+    try:
+        ai_result = await generate_content(text, final_output, config_data)
+        
+        # If it's step 1 of website generation, try parsing JSON
+        if "website" in config_data.get("formats", []) and "palette" not in config_data:
+            try:
+                clean_json = ai_result.strip()
+                if clean_json.startswith('```json'):
+                    clean_json = clean_json.split('```json')[1].split('```')[0].strip()
+                parsed = json.loads(clean_json)
+                return {"ai_result": parsed, "message": "Select design options."}
+            except Exception as e:
+                pass
+                
+        return {
+            "message": f"Processed {len(received)} file(s) and generated output.",
+            "text": text,
+            "files": received,
+            "final_output": final_output,
+            "ai_result": ai_result,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

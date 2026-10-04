@@ -12,6 +12,7 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="/css/prompt.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <!-- Ambient background glow matching warm gold/amber theme -->
@@ -52,24 +53,68 @@
     <main class="main-area">
       <!-- Chat Conversation Log -->
       <section class="chat-container" id="chatContainer">
-        <!-- User Query Bubble (hidden until first query is entered) -->
-        <div class="user-message-row" id="userMessageRow" style="display: none;">
-          <div class="user-bubble" id="userMessageText"></div>
-        </div>
-
-        <!-- Embedded Iframe for Rendered Result (no response box wrapper) -->
-        <div class="iframe-wrapper" id="iframeWrapper" style="display: none;">
-          <iframe
-            id="contentIframe"
-            class="preview-iframe"
-            title="Rendered Output Preview"
-            srcdoc=""
-          ></iframe>
-        </div>
+        <!-- Messages will be appended here dynamically -->
       </section>
+
+      <!-- Interactive AI Selection Area (Hidden by default) -->
+      <div class="ai-selection-area" id="aiSelectionArea" style="display: none; margin: 0 20px 20px 20px; z-index: 10;">
+        <div id="paletteDisplay" class="selection-grid"></div>
+        <div id="fontDisplay" class="selection-grid"></div>
+        <button type="button" id="confirmSelectionBtn" class="dashboard-btn" style="margin-top: 14px; display: none;">Confirm Selection</button>
+      </div>
 
       <!-- Bottom Prompt & File Upload Area (stuck to bottom, no border) -->
       <form class="prompt-box-form" id="promptForm">
+        <!-- Configuration Panel (Hidden by default) -->
+        <div class="config-panel" id="configPanel" style="display: none;">
+          <div class="config-grid">
+            <div class="config-group">
+              <label for="outFormats">Output Formats (Ctrl+click)</label>
+              <select id="outFormats" multiple size="4">
+                <option value="video">Video Package</option>
+                <option value="linkedin">LinkedIn Post</option>
+                <option value="twitter">Twitter/X Post</option>
+                <option value="advisory">Advisory</option>
+                <option value="infographic">Infographic</option>
+                <option value="exec_summary">Executive Summary</option>
+                <option value="presentation">Presentation</option>
+                <option value="website">Website</option>
+              </select>
+            </div>
+            <div class="config-group">
+              <label for="outAudience">Target Audience</label>
+              <input type="text" id="outAudience" placeholder="e.g. Executives, General Public" />
+              
+              <label for="outTone">Tone</label>
+              <select id="outTone">
+                <option value="professional">Professional</option>
+                <option value="casual">Casual</option>
+                <option value="persuasive">Persuasive</option>
+                <option value="informative">Informative</option>
+              </select>
+            </div>
+            <div class="config-group">
+              <label for="outLanguage">Language</label>
+              <input type="text" id="outLanguage" placeholder="e.g. English" value="English" />
+              
+              <label for="outLevel">Level of Detail</label>
+              <select id="outLevel">
+                <option value="concise">Concise</option>
+                <option value="standard" selected>Standard</option>
+                <option value="detailed">Detailed</option>
+                <option value="comprehensive">Comprehensive</option>
+              </select>
+            </div>
+            <div class="config-group">
+              <label for="outObjective">Communication Objective</label>
+              <input type="text" id="outObjective" placeholder="e.g. Inform, Persuade, Alert" />
+              
+              <label for="outStyle">Content Style</label>
+              <input type="text" id="outStyle" placeholder="e.g. Corporate, Storytelling" />
+            </div>
+          </div>
+        </div>
+
         <div class="input-container">
           <div class="attached-files-list" id="attachedFilesList"></div>
           <textarea
@@ -81,6 +126,11 @@
         </div>
 
         <div class="prompt-actions">
+          <!-- Configuration Toggle Button -->
+          <button type="button" class="config-toggle-btn" id="configToggleBtn" title="Generation Settings">
+            <img src="/assets/settings.svg" alt="Settings" class="action-icon-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23a1a1a1\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'12\' cy=\'12\' r=\'3\'></circle><path d=\'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z\'></path></svg>'"/>
+          </button>
+
           <!-- File Upload Button with img icon, accepts any file format -->
           <label class="file-upload-btn" title="Upload files" for="fileInput">
             <img src="/assets/file-plus.svg" alt="Attach files" class="action-icon-img" />
