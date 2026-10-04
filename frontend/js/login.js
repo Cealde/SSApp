@@ -244,22 +244,15 @@ document.addEventListener('DOMContentLoaded', () => {
       formValid = false;
     }
 
-    if (!organization) {
-      showError('signupOrganization', 'Organization Name is required.');
-      formValid = false;
-    } else {
-      clearFieldError('signupOrganization');
-    }
-
-    if (!organizationPassword) {
-      showError('signupOrganizationPassword', 'Organization Password is required.');
+    if (organization && organization !== 'unincorporated' && !organizationPassword) {
+      showError('signupOrganizationPassword', 'Organization Password is required for this organization.');
       formValid = false;
     } else {
       clearFieldError('signupOrganizationPassword');
     }
 
     if (!formValid) {
-      setStatus(signupStatus, 'Please complete all required fields.', 'error');
+      setStatus(signupStatus, 'Please complete the required fields.', 'error');
       return;
     }
 
@@ -268,18 +261,33 @@ document.addEventListener('DOMContentLoaded', () => {
     signUpButton.querySelector('.button-label').textContent = 'Creating Account...';
 
     try {
+      const finalOrg = organization || 'Unincorporated';
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ first_name: firstName, email, password, organization, organization_password: organizationPassword }),
+        body: JSON.stringify({
+          first_name: firstName,
+          email,
+          password,
+          organization: finalOrg,
+          organization_password: organizationPassword || '',
+        }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.detail || data.message || 'Registration failed.');
+        let msg = 'Registration failed.';
+        if (typeof data.detail === 'string') {
+          msg = data.detail;
+        } else if (Array.isArray(data.detail) && data.detail.length > 0) {
+          msg = data.detail.map((err) => err.msg || err.message || JSON.stringify(err)).join(', ');
+        } else if (data.message) {
+          msg = data.message;
+        }
+        throw new Error(msg);
       }
 
       setConfirmationState(email);

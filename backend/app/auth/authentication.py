@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 import httpx
 from fastapi import HTTPException, Security, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, model_validator
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(BASE_DIR / ".env")
@@ -21,11 +22,23 @@ def get_headers():
 security = HTTPBearer(auto_error=False)
 
 class SignUpRequest(BaseModel):
-    first_name: str
     email: str
     password: str
-    organization: str
-    organization_password: str
+    first_name: Optional[str] = ""
+    organization: Optional[str] = "Unincorporated"
+    organization_password: Optional[str] = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_aliases(cls, data):
+        if isinstance(data, dict):
+            if "firstName" in data and "first_name" not in data:
+                data["first_name"] = data["firstName"]
+            if "organizationPassword" in data and "organization_password" not in data:
+                data["organization_password"] = data["organizationPassword"]
+            if "org" in data and "organization" not in data:
+                data["organization"] = data["org"]
+        return data
 
 class LoginRequest(BaseModel):
     email: str
@@ -47,6 +60,11 @@ _LOCAL_ORGS = {
         "name": "Meteorological",
         "password": "meteoPass!",
         "icon": "https://example.com/meteo_icon.png"
+    },
+    "unincorporated": {
+        "name": "Unincorporated",
+        "password": "",
+        "icon": ""
     }
 }
 
@@ -57,6 +75,9 @@ async def _verify_organization(org_name: str, org_password: str, key: str) -> di
     """
     cleaned_name = org_name.strip().lower()
     cleaned_password = org_password.strip()
+
+    if cleaned_name == "unincorporated":
+        return {"name": "Unincorporated", "password": "", "icon": ""}
 
     if key:
         # Query Supabase REST API for the organization
@@ -114,11 +135,20 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
     """
     key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\"")
     email = auth_data.email.strip().lower()
-    first_name = auth_data.first_name.strip()
-    org_name = auth_data.organization.strip()
+    first_name = (auth_data.first_name or "").strip()
+    org_name = (auth_data.organization or "Unincorporated").strip()
+    org_password = (auth_data.organization_password or "").strip()
 
-    # Step 1: Verify organization exists and organization password is valid
-    await _verify_organization(org_name, auth_data.organization_password, key)
+    # Step 1: Verify organization exists and organization password is valid if an organization is specified
+    if org_name and org_name.lower() != "unincorporated":
+        if not org_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Organization password is required for verified organizations."
+            )
+        await _verify_organization(org_name, org_password, key)
+    else:
+        org_name = "Unincorporated"
 
     if key:
         # Step 2: Register user in Supabase Auth
