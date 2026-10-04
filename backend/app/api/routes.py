@@ -60,12 +60,18 @@ class ExportPPTXRequest(BaseModel):
     markdown: str
     theme: Optional[str] = "amber"
     org_name: Optional[str] = "SatyaSetu"
+    org_icon_url: Optional[str] = "/assets/logo.svg"
 
 @router.post("/export-pptx")
 async def export_pptx_endpoint(payload: ExportPPTXRequest):
     try:
         slides = parse_slides_from_markdown(payload.markdown)
-        pptx_bytes = generate_pptx_bytes(slides, theme_name=payload.theme or "amber", org_name=payload.org_name or "SatyaSetu")
+        pptx_bytes = generate_pptx_bytes(
+            slides,
+            theme_name=payload.theme or "amber",
+            org_name=payload.org_name or "SatyaSetu",
+            org_icon_url=payload.org_icon_url or "/assets/logo.svg"
+        )
         return Response(
             content=pptx_bytes,
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -105,7 +111,8 @@ async def submit_text(payload: TextPayload):
                 if slides_data:
                     theme = config.get("presTheme", "amber")
                     org_name = config.get("orgName", "SatyaSetu")
-                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name)
+                    org_icon_url = config.get("orgIconUrl", "/assets/logo.svg")
+                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name, org_icon_url=org_icon_url)
                     pptx_base64 = base64.b64encode(pptx_bytes).decode("ascii")
             except Exception as e:
                 print("Failed to auto-generate PPTX:", e)
@@ -266,7 +273,8 @@ async def give_files(
                 if slides_data:
                     theme = config_data.get("presTheme", "amber")
                     org_name = config_data.get("orgName", "SatyaSetu")
-                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name)
+                    org_icon_url = config_data.get("orgIconUrl", "/assets/logo.svg")
+                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name, org_icon_url=org_icon_url)
                     pptx_base64 = base64.b64encode(pptx_bytes).decode("ascii")
             except Exception as e:
                 print("Failed to auto-generate PPTX in give-files:", e)

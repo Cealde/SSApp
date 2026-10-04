@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      parsedAuth?.organizationIcon ||
                      parsedAuth?.organization?.icon ||
                      parsedAuth?.icon ||
-                     '';
+                     '/assets/logo.svg';
 
   const orgName = localStorage.getItem('organizationName') ||
                   sessionStorage.getItem('organizationName') ||
@@ -136,8 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
       level: document.getElementById('outLevel')?.value || 'standard',
       objective: document.getElementById('outObjective')?.value.trim() || '',
       style: document.getElementById('outStyle')?.value.trim() || '',
-      orgName: orgName || '',
-      orgIconUrl: orgIconUrl || '',
+      orgName: orgName || 'SatyaSetu',
+      orgIconUrl: orgIconUrl || '/assets/logo.svg',
     };
   }
 
@@ -225,9 +225,58 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Blob([byteArray], { type: mimeType });
   }
 
-  // Generate Interactive 16:9 Presentation Slide Deck HTML
-  function generateInteractiveSlideDeck(rawMarkdown, theme = 'amber', company = 'SatyaSetu') {
-    const cleanText = rawMarkdown.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+  // Image extraction regex
+  const IMG_REGEX = /(?:!\[(.*?)\]\((https?:\/\/[^\s\)]+)\))|(?:\[(?:Image|Photo|Unsplash)[^\]]*\]\((https?:\/\/[^\s\)]+)\))|(?:\*?Image(?:\s+Suggestion)?:\s*\[?(.*?)\]?\(?(https?:\/\/[^\s\)\*]+)\)?\*?)/i;
+
+  // --- Split Multiple Deliverables ---
+  function splitDeliverables(rawContent) {
+    if (typeof rawContent !== 'string') {
+      return { presentation: null, website: null, mermaid: null, raw: rawContent };
+    }
+
+    let websiteHtml = null;
+    let mermaidCode = null;
+    let presentationMd = null;
+
+    // Extract website HTML
+    const htmlMatch = rawContent.match(/```html\s*([\s\S]*?)```/i) ||
+                      rawContent.match(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i);
+    if (htmlMatch) {
+      websiteHtml = (htmlMatch[1] || htmlMatch[0]).trim();
+    }
+
+    // Extract Mermaid code
+    const mermaidMatch = rawContent.match(/```mermaid\s*([\s\S]*?)```/i) ||
+                         rawContent.match(/(?:graph TD|graph LR|flowchart TD|flowchart LR|xychart-beta)[\s\S]*?(?=\n\n#|\n\n```|$)/i);
+    if (mermaidMatch) {
+      mermaidCode = (mermaidMatch[1] || mermaidMatch[0]).trim();
+    }
+
+    // Extract Presentation markdown (slides)
+    let presText = rawContent;
+    const delivMatch = presText.match(/\n#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Website|Mermaid|Infographic|Diagram)\b|\n```html|\n```mermaid/i);
+    if (delivMatch) {
+      presText = presText.slice(0, delivMatch.index).trim();
+    }
+    presText = presText.replace(/^(?:#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Presentation|Slides)\b[^\n]*\n+)/i, '').trim();
+
+    // Check if presText has slides
+    if (/--- Slide|\bSlide \d+:|## Slide/i.test(presText) || (presText.includes('---') && presText.length > 50)) {
+      presentationMd = presText;
+    }
+
+    return {
+      presentation: presentationMd,
+      website: websiteHtml,
+      mermaid: mermaidCode,
+      raw: rawContent
+    };
+  }
+
+  // Generate Interactive 16:9 Presentation Slide Deck HTML with Logo & Images
+  function generateInteractiveSlideDeck(rawMarkdown, theme = 'amber', company = 'SatyaSetu', logoUrl = '/assets/logo.svg') {
+    let cleanText = rawMarkdown.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+    cleanText = cleanText.replace(/^(?:#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Presentation|Slides)\b[^\n]*\n+)/i, '').trim();
     let rawBlocks = [];
 
     if (cleanText.includes('\n---\n') || cleanText.includes('\n--- \n') || cleanText.includes('\n---\r\n')) {
@@ -241,13 +290,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const slides = rawBlocks.map((block, idx) => {
+      // Discard code block slides
+      if (block.startsWith('```html') || block.startsWith('```mermaid') || block.includes('<!DOCTYPE')) {
+        return null;
+      }
+
       const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
       let title = '';
       let subtitle = '';
+      let imageUrl = '';
       const bullets = [];
       const isTitle = idx === 0 || block.toLowerCase().slice(0, 80).includes('title slide');
 
       for (let line of lines) {
+        // Ignore deliverable headers
+        if (/^#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Presentation|Slides)\b/i.test(line)) {
+          continue;
+        }
+
+        // Match images
+        const mImg = IMG_REGEX.exec(line);
+        if (mImg) {
+          const matchGroups = [mImg[1], mImg[2], mImg[3], mImg[4], mImg[5]].filter(Boolean);
+          for (let g of matchGroups) {
+            if (g.startsWith('http')) imageUrl = g;
+          }
+          continue; // Strip image suggestion text from bullets
+        }
+
         if (line.startsWith('# ') || line.startsWith('## ') || line.startsWith('### ')) {
           const cand = line.replace(/^#{1,3}\s+/, '').replace(/^Slide\s+\d+:?\s*/i, '').trim();
           if (!title) title = cand;
@@ -272,9 +342,10 @@ document.addEventListener('DOMContentLoaded', () => {
         title: title || `Slide ${idx + 1}`,
         subtitle: subtitle,
         bullets: bullets,
+        imageUrl: imageUrl,
         isTitle: isTitle,
       };
-    });
+    }).filter(Boolean);
 
     const isLight = theme === 'light';
     const isNavy = theme === 'navy';
@@ -289,7 +360,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (s.isTitle) {
         return `
           <div class="slide slide-title-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
-            <span class="slide-org-badge">${escapeHtml(company || 'SatyaSetu')} Presentation</span>
+            <div class="slide-title-header">
+              ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="slide-title-logo" onerror="this.style.display='none'" />` : ''}
+              <span class="slide-org-badge">${escapeHtml(company || 'SatyaSetu')} Presentation</span>
+            </div>
             <h1 class="slide-main-title">${escapeHtml(s.title)}</h1>
             ${s.subtitle ? `<p class="slide-subtitle">${escapeHtml(s.subtitle)}</p>` : ''}
             <div class="slide-title-footer">Widescreen Presentation Deck  •  ${slides.length} Slides</div>
@@ -297,15 +371,27 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else {
         const bulletList = s.bullets.map((b) => `<li>${escapeHtml(b.replace(/\*\*|__/g, ''))}</li>`).join('');
+        const hasPhoto = Boolean(s.imageUrl);
+
         return `
           <div class="slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
             <div class="slide-header">
               <span class="slide-num-pill">Slide ${s.number}</span>
               <h2 class="slide-content-title">${escapeHtml(s.title)}</h2>
             </div>
-            <ul class="slide-bullets">${bulletList}</ul>
+            <div class="slide-body-layout ${hasPhoto ? 'has-photo-layout' : ''}">
+              <ul class="slide-bullets">${bulletList}</ul>
+              ${hasPhoto ? `
+                <div class="slide-photo-col">
+                  <img src="${s.imageUrl}" alt="${escapeHtml(s.title)}" class="slide-photo" onerror="this.parentElement.style.display='none';" />
+                </div>
+              ` : ''}
+            </div>
             <div class="slide-footer">
-              <span>${escapeHtml(company || 'SatyaSetu')}</span>
+              <div class="slide-footer-brand">
+                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="slide-footer-logo" onerror="this.style.display='none'" />` : ''}
+                <span>${escapeHtml(company || 'SatyaSetu')}</span>
+              </div>
               <span>Slide ${s.number} of ${slides.length}</span>
             </div>
           </div>
@@ -349,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     .slide {
       flex: 1;
-      padding: 36px 44px;
+      padding: 34px 44px;
       display: none;
       flex-direction: column;
       justify-content: space-between;
@@ -365,6 +451,16 @@ document.addEventListener('DOMContentLoaded', () => {
       text-align: center;
       justify-content: center;
       gap: 16px;
+    }
+    .slide-title-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slide-title-logo {
+      height: 38px;
+      width: 38px;
+      object-fit: contain;
     }
     .slide-org-badge {
       display: inline-flex;
@@ -399,9 +495,9 @@ document.addEventListener('DOMContentLoaded', () => {
       opacity: 0.8;
     }
     .slide-header {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       border-bottom: 1px solid rgba(226, 162, 33, 0.2);
-      padding-bottom: 12px;
+      padding-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -416,41 +512,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     .slide-content-title {
       font-family: 'Momo Trust Display', serif;
-      font-size: 1.7rem;
+      font-size: 1.65rem;
       color: ${titleColor};
       margin: 0;
+    }
+    .slide-body-layout {
+      display: flex;
+      gap: 24px;
+      flex: 1;
+      align-items: center;
     }
     .slide-bullets {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       flex: 1;
       justify-content: center;
     }
     .slide-bullets li {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       color: ${text};
-      line-height: 1.55;
+      line-height: 1.5;
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
     }
     .slide-bullets li::before {
       content: '▪';
       color: ${accent};
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       line-height: 1;
       margin-top: 1px;
+    }
+    .slide-photo-col {
+      width: 260px;
+      height: 180px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(226, 162, 33, 0.25);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    .slide-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .slide-footer {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 0.8rem;
       color: ${muted};
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       padding-top: 10px;
-      margin-top: 10px;
+      margin-top: 8px;
+    }
+    .slide-footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .slide-footer-logo {
+      height: 18px;
+      width: 18px;
+      object-fit: contain;
     }
     .deck-controls {
       display: flex;
@@ -524,6 +652,26 @@ document.addEventListener('DOMContentLoaded', () => {
 </html>`;
   }
 
+  // Helper to wrap Mermaid code in standalone viewer HTML
+  function renderMermaidHtml(cleanMermaidCode) {
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <script src="/js/mermaid.min.js"></script>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          try { mermaid.initialize({ startOnLoad: true, theme: "dark" }); } catch(e){}
+        });
+      </script>
+      <style>
+        body { margin: 0; background: #110e08; color: #fbf7ee; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
+        .mermaid { width: 100%; text-align: center; }
+      </style>
+    </head><body>
+      <div class="mermaid">
+        ${cleanMermaidCode}
+      </div>
+    </body></html>`;
+  }
+
   // Helper to render Markdown or outline text as clean HTML
   function markdownToHtml(rawMarkdown) {
     const lines = rawMarkdown.split('\n');
@@ -595,7 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
     groupWrapper.className = 'chat-message-group';
     groupWrapper.style.display = 'flex';
     groupWrapper.style.flexDirection = 'column';
-    groupWrapper.style.gap = '16px';
+    groupWrapper.style.gap = '14px';
     groupWrapper.style.marginBottom = '24px';
 
     const userRow = document.createElement('div');
@@ -603,6 +751,12 @@ document.addEventListener('DOMContentLoaded', () => {
     userRow.style.display = 'flex';
     userRow.innerHTML = `<div class="user-bubble">${escapeHtml(promptText)}</div>`;
     groupWrapper.appendChild(userRow);
+
+    // Deliverables Tab Bar Slot
+    const tabContainer = document.createElement('div');
+    tabContainer.className = 'deliverables-tab-bar';
+    tabContainer.style.display = 'none';
+    groupWrapper.appendChild(tabContainer);
 
     const iframeWrapper = document.createElement('div');
     iframeWrapper.className = 'iframe-wrapper glow-fade-in';
@@ -658,72 +812,131 @@ document.addEventListener('DOMContentLoaded', () => {
       ? responseData.ai_result
       : responseData;
 
-    const isPresentation = (responseData?.is_presentation) ||
-      (typeof rawContent === 'string' && (/--- Slide|\bSlide \d+:/i.test(rawContent) || /## Slide/i.test(rawContent))) ||
-      (promptText && /presentation|slide deck|slides/i.test(promptText));
-
     const pptxBase64 = responseData?.pptx_base64 || null;
-
-    let htmlToDisplay = '';
-    const rawTextContent = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent, null, 2);
+    const iframe = groupWrapper.querySelector('.preview-iframe');
+    const tabContainer = groupWrapper.querySelector('.deliverables-tab-bar');
+    const downloadPptxBtn = groupWrapper.querySelector('.download-pptx-btn');
+    const downloadZipBtn = groupWrapper.querySelector('.download-result-btn');
 
     if (isError) {
-      htmlToDisplay = `<!DOCTYPE html><html><head>
+      const errHtml = `<!DOCTYPE html><html><head>
         <meta charset="utf-8">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap" rel="stylesheet">
       </head><body style="background:#110e08;color:#ff6b6b;font-family:'DM Sans',sans-serif;padding:28px;margin:0;box-sizing:border-box;">
         <h3 style="font-family:'Momo Trust Display',serif;color:#ff6b6b;margin-top:0;font-size:1.3rem;">⚠️ Generation Error</h3>
-        <p style="font-size:15px;line-height:1.6;color:#dfd4c0;">${escapeHtml(rawTextContent)}</p>
+        <p style="font-size:15px;line-height:1.6;color:#dfd4c0;">${escapeHtml(typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent, null, 2))}</p>
       </body></html>`;
-    } else if (isPresentation && typeof rawContent === 'string') {
-      // Render as interactive slide deck!
-      const presTheme = document.getElementById('presTheme')?.value || 'amber';
-      htmlToDisplay = generateInteractiveSlideDeck(rawContent, presTheme, orgName || 'SatyaSetu');
-    } else if (typeof rawContent === 'string' && (rawContent.includes('```mermaid') || rawContent.trim().startsWith('graph ') || rawContent.trim().startsWith('flowchart '))) {
-      const cleanCode = rawContent.replace(/```mermaid/g, '').replace(/```/g, '').trim();
-      htmlToDisplay = `<!DOCTYPE html><html><head><meta charset="utf-8">
-        <script src="/js/mermaid.min.js"></script>
-        <script>
-          document.addEventListener("DOMContentLoaded", function() {
-            try { mermaid.initialize({ startOnLoad: true, theme: "dark" }); } catch(e){}
-          });
-        </script>
-        <style>
-          body { margin: 0; background: #110e08; color: #fbf7ee; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
-          .mermaid { width: 100%; text-align: center; }
-        </style>
-      </head><body>
-        <div class="mermaid">
-          ${cleanCode}
-        </div>
-      </body></html>`;
-    } else if (typeof rawContent === 'string' && (rawContent.includes('<html') || rawContent.includes('<!DOCTYPE') || (rawContent.includes('<div') && rawContent.includes('</div>')))) {
-      htmlToDisplay = rawContent;
-    } else if (typeof rawContent === 'string') {
-      htmlToDisplay = markdownToHtml(rawContent);
-    } else {
-      htmlToDisplay = `<!DOCTYPE html><html><body style="background:#110e08;color:#fbf7ee;font-family:sans-serif;padding:24px;margin:0;">
-        <pre style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${escapeHtml(rawTextContent)}</pre>
-      </body></html>`;
+      if (iframe) iframe.srcdoc = errHtml;
+      if (downloadPptxBtn) downloadPptxBtn.style.display = 'none';
+      if (downloadZipBtn) downloadZipBtn.style.display = 'none';
+      return;
     }
 
-    const iframe = groupWrapper.querySelector('.preview-iframe');
-    if (iframe) {
-      iframe.srcdoc = htmlToDisplay;
+    const deliverables = splitDeliverables(rawContent);
+    const presTheme = document.getElementById('presTheme')?.value || 'amber';
+
+    // Build active deliverables dictionary
+    const views = {};
+    if (deliverables.presentation) {
+      views.presentation = {
+        title: 'Presentation Deck',
+        html: generateInteractiveSlideDeck(deliverables.presentation, presTheme, orgName || 'SatyaSetu', orgIconUrl)
+      };
+    }
+    if (deliverables.website) {
+      views.website = {
+        title: 'Interactive Website',
+        html: deliverables.website
+      };
+    }
+    if (deliverables.mermaid) {
+      views.mermaid = {
+        title: 'Mermaid Diagram',
+        html: renderMermaidHtml(deliverables.mermaid)
+      };
     }
 
-    // Configure Action Buttons
-    const downloadPptxBtn = groupWrapper.querySelector('.download-pptx-btn');
-    const downloadZipBtn = groupWrapper.querySelector('.download-result-btn');
+    // Fallback if no specific deliverables were parsed
+    if (Object.keys(views).length === 0) {
+      if (typeof rawContent === 'string' && (rawContent.includes('<html') || rawContent.includes('<!DOCTYPE'))) {
+        views.website = { title: 'Website', html: rawContent };
+      } else if (typeof rawContent === 'string' && (rawContent.includes('graph ') || rawContent.includes('flowchart ') || rawContent.includes('xychart-beta'))) {
+        views.mermaid = { title: 'Mermaid Diagram', html: renderMermaidHtml(rawContent) };
+      } else if (responseData?.is_presentation || /slide/i.test(promptText)) {
+        views.presentation = {
+          title: 'Presentation Deck',
+          html: generateInteractiveSlideDeck(String(rawContent), presTheme, orgName || 'SatyaSetu', orgIconUrl)
+        };
+      } else {
+        views.document = { title: 'Document', html: markdownToHtml(String(rawContent)) };
+      }
+    }
 
-    if (!isError && isPresentation) {
-      if (downloadPptxBtn) {
-        downloadPptxBtn.style.display = 'inline-flex';
-        downloadPptxBtn.onclick = async () => {
-          if (pptxBase64) {
-            const blob = base64ToBlob(pptxBase64, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    const keys = Object.keys(views);
+
+    // Render Deliverables Tabs if more than 1 output exists
+    if (tabContainer && keys.length > 1) {
+      tabContainer.innerHTML = '';
+      tabContainer.style.display = 'flex';
+      keys.forEach((key, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `deliv-tab ${index === 0 ? 'active' : ''}`;
+        btn.textContent = views[key].title;
+        btn.dataset.key = key;
+        btn.onclick = () => {
+          tabContainer.querySelectorAll('.deliv-tab').forEach((t) => t.classList.remove('active'));
+          btn.classList.add('active');
+          if (iframe) iframe.srcdoc = views[key].html;
+          if (downloadPptxBtn) {
+            downloadPptxBtn.style.display = key === 'presentation' ? 'inline-flex' : 'none';
+          }
+        };
+        tabContainer.appendChild(btn);
+      });
+    } else if (tabContainer) {
+      tabContainer.style.display = 'none';
+    }
+
+    // Default view: first deliverable
+    const defaultKey = keys[0];
+    if (iframe && views[defaultKey]) {
+      iframe.srcdoc = views[defaultKey].html;
+    }
+
+    // Configure PowerPoint Download Button
+    const hasPresentation = Boolean(views.presentation);
+    if (downloadPptxBtn) {
+      downloadPptxBtn.style.display = (hasPresentation && defaultKey === 'presentation') ? 'inline-flex' : 'none';
+      downloadPptxBtn.onclick = async () => {
+        if (pptxBase64) {
+          const blob = base64ToBlob(pptxBase64, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `SathyaSethu_Presentation_${Date.now()}.pptx`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          try {
+            downloadPptxBtn.disabled = true;
+            downloadPptxBtn.textContent = 'Generating PPTX...';
+            const res = await fetch('/api/export-pptx', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                markdown: deliverables.presentation || rawContent,
+                theme: presTheme,
+                org_name: orgName || 'SatyaSetu',
+                org_icon_url: orgIconUrl || '/assets/logo.svg'
+              })
+            });
+            if (!res.ok) throw new Error('PPTX export failed');
+            const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -732,44 +945,18 @@ document.addEventListener('DOMContentLoaded', () => {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-          } else {
-            // Request PPTX export from backend
-            try {
-              downloadPptxBtn.disabled = true;
-              downloadPptxBtn.textContent = 'Generating PPTX...';
-              const res = await fetch('/api/export-pptx', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  markdown: rawTextContent,
-                  theme: document.getElementById('presTheme')?.value || 'amber',
-                  org_name: orgName || 'SatyaSetu'
-                })
-              });
-              if (!res.ok) throw new Error('PPTX export failed');
-              const blob = await res.blob();
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `SathyaSethu_Presentation_${Date.now()}.pptx`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            } catch (err) {
-              alert('Could not download PPTX: ' + err.message);
-            } finally {
-              downloadPptxBtn.disabled = false;
-              downloadPptxBtn.textContent = 'Download PowerPoint (.pptx)';
-            }
+          } catch (err) {
+            alert('Could not download PPTX: ' + err.message);
+          } finally {
+            downloadPptxBtn.disabled = false;
+            downloadPptxBtn.textContent = 'Download PowerPoint (.pptx)';
           }
-        };
-      }
-    } else if (downloadPptxBtn) {
-      downloadPptxBtn.style.display = 'none';
+        }
+      };
     }
 
-    if (downloadZipBtn && !isError) {
+    // Configure ZIP Download Button (Packages all deliverables cleanly)
+    if (downloadZipBtn) {
       downloadZipBtn.style.display = 'inline-flex';
       downloadZipBtn.onclick = async () => {
         if (!window.JSZip) {
@@ -778,8 +965,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const zip = new JSZip();
 
-        // If it's a presentation, include the real PPTX file in the ZIP!
-        if (isPresentation) {
+        // 1. Presentation
+        if (hasPresentation) {
           let pptxBlob = null;
           if (pptxBase64) {
             pptxBlob = base64ToBlob(pptxBase64, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
@@ -789,38 +976,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  markdown: rawTextContent,
-                  theme: document.getElementById('presTheme')?.value || 'amber',
-                  org_name: orgName || 'SatyaSetu'
+                  markdown: deliverables.presentation || rawContent,
+                  theme: presTheme,
+                  org_name: orgName || 'SatyaSetu',
+                  org_icon_url: orgIconUrl || '/assets/logo.svg'
                 })
               });
               if (res.ok) pptxBlob = await res.blob();
             } catch (e) {}
           }
-          if (pptxBlob) {
-            zip.file('presentation.pptx', pptxBlob);
-          }
-          zip.file('presentation.html', htmlToDisplay);
-          zip.file('slides.md', rawTextContent);
-        } else {
-          zip.file('index.html', htmlToDisplay);
-          if (typeof rawContent === 'string' && !rawContent.includes('<html')) {
-            zip.file('content.md', rawContent);
-          }
+          if (pptxBlob) zip.file('presentation.pptx', pptxBlob);
+          zip.file('presentation.html', views.presentation.html);
+          zip.file('slides.md', deliverables.presentation);
+        }
+
+        // 2. Website
+        if (views.website) {
+          zip.file('website.html', views.website.html);
+        }
+
+        // 3. Mermaid Diagram
+        if (views.mermaid) {
+          zip.file('diagram.html', views.mermaid.html);
+          if (deliverables.mermaid) zip.file('diagram.mmd', deliverables.mermaid);
+        }
+
+        // 4. Raw text source
+        if (typeof rawContent === 'string') {
+          zip.file('full_output.md', rawContent);
         }
 
         const blob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `SathyaSethu_Generated_${Date.now()}.zip`;
+        a.download = `SathyaSethu_Bundle_${Date.now()}.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       };
-    } else if (downloadZipBtn) {
-      downloadZipBtn.style.display = 'none';
     }
 
     setTimeout(() => {
@@ -1022,7 +1217,7 @@ document.addEventListener('DOMContentLoaded', () => {
           window.createButtonFunction(aiResult, async (selectedChoices) => {
             const nextConfig = { ...configData, ...selectedChoices };
             const followUpChatId = `chat-${Date.now()}`;
-            createLoadingMessageGroup(`${promptText} (Website Design)`, followUpChatId);
+            createLoadingMessageGroup(`${promptText} (Website)`, followUpChatId);
 
             activeAbortController = new AbortController();
             setGeneratingState(true, followUpChatId);
@@ -1050,14 +1245,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
               const followUpData = await followUpRes.json().catch(() => ({}));
               if (!followUpRes.ok) {
-                throw new Error(followUpData.detail || 'Failed to generate website code');
+                throw new Error(followUpData.detail || 'Failed to generate deliverables');
               }
 
-              displayAiResponse(followUpData, `${promptText} (Website)`, followUpChatId);
+              displayAiResponse(followUpData, `${promptText} (Deliverables)`, followUpChatId);
 
               chatSessions.push({
                 id: followUpChatId,
-                prompt: `${promptText} (Website)`,
+                prompt: `${promptText} (Deliverables)`,
                 content: followUpData.ai_result,
               });
 
@@ -1118,55 +1313,85 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Dynamic Choice Function for Website Generation
+  // --- Dynamic Color Palette and Font Selection (using createColorpalette & createFontBox) ---
+  window.createColorpalette = function (colors, targetContainer, onSelect) {
+    const palleteContainer = document.createElement('div');
+    palleteContainer.className = 'palette';
+
+    colors.forEach((color) => {
+      const sw = document.createElement('div');
+      sw.className = 'sw';
+      sw.style.backgroundColor = color;
+      sw.textContent = color.toUpperCase();
+      palleteContainer.appendChild(sw);
+    });
+
+    palleteContainer.addEventListener('click', () => {
+      targetContainer.querySelectorAll('.palette').forEach((p) => p.classList.remove('selected'));
+      palleteContainer.classList.add('selected');
+      if (onSelect) onSelect(colors);
+    });
+
+    targetContainer.appendChild(palleteContainer);
+    return palleteContainer;
+  };
+
+  window.createFontBox = function (fontName, fontType, targetContainer, onSelect) {
+    const fontContainer = document.createElement('div');
+    fontContainer.className = `font-container ${fontType}-font`;
+
+    const fontParam = encodeURIComponent(fontName).replace(/%20/g, '+');
+    const fontLink = `https://fonts.googleapis.com/css2?family=${fontParam}&display=swap`;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = fontLink;
+    document.head.appendChild(link);
+
+    fontContainer.textContent = `${fontName} (${fontType === 'title' ? 'Title' : 'Body'})`;
+    link.onload = () => {
+      fontContainer.style.fontFamily = `"${fontName}", sans-serif`;
+    };
+
+    fontContainer.addEventListener('click', () => {
+      targetContainer.querySelectorAll(`.${fontType}-font`).forEach((f) => f.classList.remove('selected'));
+      fontContainer.classList.add('selected');
+      if (onSelect) onSelect(fontName);
+    });
+
+    targetContainer.appendChild(fontContainer);
+    return fontContainer;
+  };
+
   window.createButtonFunction = function (options, callback) {
     if (!aiSelectionArea || !paletteDisplay || !fontDisplay || !confirmSelectionBtn) return;
 
-    paletteDisplay.innerHTML = '<h3 style="width: 100%; margin-bottom: 8px; font-family:\'Momo Trust Display\',serif; color:#e2a221;">Select a Color Palette</h3>';
-    fontDisplay.innerHTML = '<h3 style="width: 100%; margin-bottom: 8px; font-family:\'Momo Trust Display\',serif; color:#e2a221;">Select Fonts (1 Body, 1 Title)</h3>';
+    paletteDisplay.innerHTML = '';
+    fontDisplay.innerHTML = '';
     aiSelectionArea.style.display = 'block';
 
     let selectedPalette = null;
     let selectedBodyFont = null;
     let selectedTitleFont = null;
 
+    // Build color palettes using window.createColorpalette
     if (options.palettes && Array.isArray(options.palettes)) {
-      options.palettes.forEach((palette, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'selection-pill palette-btn';
-        btn.innerHTML = `
-          Palette ${idx + 1} 
-          <span class="color-swatch" style="background:${palette[0] || '#fff'}"></span>
-          <span class="color-swatch" style="background:${palette[1] || '#ccc'}"></span>
-        `;
-        btn.onclick = () => {
-          document.querySelectorAll('.palette-btn').forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          selectedPalette = palette;
+      options.palettes.forEach((palette) => {
+        window.createColorpalette(palette, paletteDisplay, (chosen) => {
+          selectedPalette = chosen;
           checkSelections();
-        };
-        paletteDisplay.appendChild(btn);
+        });
       });
     }
 
+    // Build font preview boxes using window.createFontBox
     if (options.fonts && Array.isArray(options.fonts)) {
       options.fonts.forEach((fontObj) => {
         const isTitle = fontObj.type === 'title';
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `selection-pill font-btn ${isTitle ? 'title-font' : 'body-font'}`;
-        btn.innerHTML = `${escapeHtml(fontObj.name)} (${isTitle ? 'Title' : 'Body'})`;
-        btn.style.fontFamily = `'${fontObj.name}', sans-serif`;
-
-        btn.onclick = () => {
-          document.querySelectorAll(`.${isTitle ? 'title-font' : 'body-font'}`).forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          if (isTitle) selectedTitleFont = fontObj.name;
-          else selectedBodyFont = fontObj.name;
+        window.createFontBox(fontObj.name, fontObj.type || 'body', fontDisplay, (chosen) => {
+          if (isTitle) selectedTitleFont = chosen;
+          else selectedBodyFont = chosen;
           checkSelections();
-        };
-        fontDisplay.appendChild(btn);
+        });
       });
     }
 

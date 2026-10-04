@@ -40,32 +40,40 @@ def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = 
     if is_website_step_1:
         instructions.append(
             "The user has requested a Website. You need to first provide design options. "
-            "Return ONLY a raw JSON object with the following structure, containing exactly 3 color palettes (hex codes) and 6 Google Fonts (3 for title, 3 for body): "
-            '{"palettes": [["#hex1", "#hex2"], ["#hex3", "#hex4"], ["#hex5", "#hex6"]], "fonts": [{"name": "Font1", "type": "title"}, {"name": "Font2", "type": "body"}]}'
+            "Return ONLY a raw JSON object with the following structure, containing exactly 3 color palettes (each with 5 hex color codes: background, primary, secondary, accent, dark) and 6 Google Fonts (3 for title, 3 for body): "
+            '{"palettes": [["#235E5E", "#558968", "#a2af9f", "#EFECDE", "#381A1A"], ["#2f00b1", "#195981", "#6fffa2", "#d5ffef", "#220035"], ["#1a1610", "#e2a221", "#f5b73d", "#dfd4c0", "#fbf7ee"]], "fonts": [{"name": "Playfair Display", "type": "title"}, {"name": "Montserrat", "type": "title"}, {"name": "Roboto Slab", "type": "title"}, {"name": "DM Sans", "type": "body"}, {"name": "Open Sans", "type": "body"}, {"name": "Lato", "type": "body"}]}'
         )
     else:
         instructions.append(
             "Your task is to generate the specific outputs requested by the user based on the provided context."
         )
-        if "website" in formats:
+        if len(formats) > 1 or any(kw in str(config).lower() for kw in ["website", "presentation", "mermaid", "diagram"]):
             instructions.append(
-                "For the 'website' output, output ONLY valid, self-contained HTML/CSS/JS code in a markdown block (or just raw HTML). "
-                "Ensure it is fully responsive and uses modern design principles. Use images from Unsplash (e.g. https://images.unsplash.com/photo-12345?auto=format&fit=crop&w=800) for stock imagery. "
-                "The page should reference the organization name if requested."
+                "CRITICAL: When multiple outputs (e.g. presentation, website, diagram) are requested, you MUST cleanly separate each output under its own distinct top-level header: "
+                "'## Deliverable: Presentation', '## Deliverable: Website', '## Deliverable: Mermaid Diagram'. "
+                "Never mix website HTML code or Mermaid code into the presentation slides."
             )
-        if "presentation" in formats:
+
+        if "presentation" in formats or "presentation" in str(config).lower():
             instructions.append(
-                "For 'presentation', output a structured presentation in HTML or Markdown slide cards with headings and bullet points. "
-                "Include a title slide with the organization details. Suggest Unsplash stock images for visual appeal."
+                "For 'presentation', output structured presentation slides separated by '---'. "
+                "Slide 1 must be the Title Slide. "
+                "Each subsequent slide must start with '## Slide Title' followed by bullet points. "
+                "Do NOT write 'Image Suggestion: ...' as a bullet point. If an image is relevant, include it on its own line using markdown image syntax: `![Image topic](https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800)`."
             )
-        if "mermaid" in formats or "infographic" in formats:
+        if "website" in formats or "website" in str(config).lower():
             instructions.append(
-                "For 'mermaid' or 'infographic', output valid top-down Mermaid flowchart code inside a ```mermaid markdown block. "
-                "Ensure it uses alphabetic node IDs and quoted text labels."
+                "For 'website', output ONLY valid, self-contained HTML/CSS/JS code inside a ```html markdown code block. "
+                "Ensure it is fully responsive, modern, and beautiful. Do NOT put website code inside presentation slides."
             )
-        if "pdf" in formats or "advisory" in formats:
+        if "mermaid" in formats or "infographic" in formats or "diagram" in str(config).lower():
             instructions.append(
-                "For documents, structure them professionally in Markdown. Include headers for the organization if specified."
+                "For 'mermaid' or 'infographic' or 'diagram', output valid Mermaid code inside a ```mermaid markdown block. "
+                "Do NOT put mermaid diagrams inside presentation slides."
+            )
+        if "pdf" in formats or "advisory" in formats or "exec_summary" in formats:
+            instructions.append(
+                "For documents, structure them professionally in Markdown with clear sections."
             )
         
     return "\n".join(instructions)
