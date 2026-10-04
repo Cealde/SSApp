@@ -3,12 +3,16 @@ import json
 import google.generativeai as genai
 from typing import Dict, Any, List
 
-def get_gemini_model():
+import asyncio
+
+def get_gemini_model(model_name: str = None):
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         genai.configure(api_key=api_key)
     
-    return genai.GenerativeModel('gemini-1.5-pro')
+    target_model = model_name or os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+    target_model = target_model.removeprefix("models/")
+    return genai.GenerativeModel(target_model)
 
 def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = False) -> str:
     formats = config.get("formats", [])
@@ -51,7 +55,7 @@ def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = 
             )
         if "presentation" in formats:
             instructions.append(
-                "For 'presentation', output a structured markdown representation of slides. "
+                "For 'presentation', output a structured presentation in HTML or Markdown slide cards with headings and bullet points. "
                 "Include a title slide with the organization details. Suggest Unsplash stock images for visual appeal."
             )
         if "mermaid" in formats or "infographic" in formats:
@@ -67,8 +71,10 @@ def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = 
     return "\n".join(instructions)
 
 async def generate_content(prompt: str, staging_data: Dict[str, Any], config: Dict[str, Any]) -> str:
-    model = get_gemini_model()
-    
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        
     docs_context = ""
     for idx, doc in enumerate(staging_data.get("documents", [])):
         docs_context += f"\n--- Document {idx+1}: {doc.get('filename', 'Unknown')} ---\n{doc.get('content', '')}\n"
@@ -92,5 +98,25 @@ async def generate_content(prompt: str, staging_data: Dict[str, Any], config: Di
             f"Body Font: {config['bodyFont']}\n"
         )
 
-    response = model.generate_content(full_prompt)
-    return response.text
+    candidate_models = [
+        os.getenv("GEMINI_MODEL", "gemini-flash-latest").removeprefix("models/"),
+        "gemini-flash-latest",
+        "gemini-3.8-flash",
+        "gemini-3.1-flash-lite",
+    ]
+    candidate_models = list(dict.fromkeys(candidate_models))
+
+    last_error = None
+    for model_name in candidate_models:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = await asyncio.to_thread(model.generate_content, full_prompt)
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_error = e
+            continue
+
+    if last_error:
+        raise last_error
+    return "No response generated from AI model."

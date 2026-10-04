@@ -22,8 +22,12 @@ AUDIO_EXTS = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus", ".wma"}
 VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".wmv", ".flv", ".m4v"}
 
 
+TEXT_EXTS = {".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", ".py", ".js", ".css", ".ts", ".yaml", ".yml", ".log"}
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".bmp"}
+
+
 def classify(filename: str, ctype: str) -> str:
-    """Return 'audio' | 'video' | 'pdf' | 'pptx' | 'unknown'."""
+    """Return 'pdf' | 'pptx' | 'audio' | 'video' | 'text' | 'image' | 'unknown'."""
     ext = os.path.splitext(filename or "")[1].lower()
     ctype = (ctype or "").lower()
 
@@ -35,7 +39,11 @@ def classify(filename: str, ctype: str) -> str:
         return "audio"
     if ctype.startswith("video/") or ext in VIDEO_EXTS:
         return "video"
-    return "unknown"
+    if ctype.startswith("text/") or ext in TEXT_EXTS or ctype == "application/json":
+        return "text"
+    if ctype.startswith("image/") or ext in IMAGE_EXTS:
+        return "image"
+    return "text"
 
 from typing import List, Dict, Any, Optional
 import json
@@ -151,11 +159,39 @@ async def give_files(
                 "size_bytes": len(contents),
             })
 
+        elif kind == "text":
+            text_str = contents.decode("utf-8", errors="replace")
+            staging.store({
+                "type": "text",
+                "filename": file.filename or "unknown.txt",
+                "content": text_str,
+                "size_bytes": len(contents),
+            })
+            received.append({
+                "type": "text",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
+
         else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file type: {file.content_type} ({file.filename})",
-            )
+            # Fallback for images or arbitrary files
+            try:
+                text_str = contents.decode("utf-8")
+                staging.store({
+                    "type": "text",
+                    "filename": file.filename or "document.txt",
+                    "content": text_str,
+                    "size_bytes": len(contents),
+                })
+            except Exception:
+                pass
+            received.append({
+                "type": kind,
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "size_bytes": len(contents),
+            })
 
     final_output = staging.give_to_ai(user_prompt=text)
 

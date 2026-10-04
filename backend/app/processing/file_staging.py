@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Union
 from backend.app.processing.pdf_optimization import OptimizedPDFResult
 from backend.app.processing.pptx_optimize import OptimizedPPTXResult
 
-StagedItem = Union[OptimizedPDFResult, OptimizedPPTXResult]
+StagedItem = Union[OptimizedPDFResult, OptimizedPPTXResult, Dict[str, Any]]
 
 
 class FileStaging:
@@ -51,20 +51,42 @@ class FileStaging:
                         "content": full_presentation_text,
                     }
                 )
+            elif isinstance(item, dict):
+                content = item.get("content", "")
+                filename = item.get("filename", "unknown.txt")
+                size = item.get("size_bytes", len(content.encode("utf-8", errors="replace")))
+                prepared_documents.append(
+                    {
+                        "doc_type": item.get("type", item.get("doc_type", "text")),
+                        "filename": filename,
+                        "pages": 1,
+                        "size_before": f"{size / 1024:.1f} KB",
+                        "size_after": f"{size / 1024:.1f} KB",
+                        "format": "text",
+                        "image_count": len(item.get("images", [])),
+                        "images": item.get("images", []),
+                        "content": content,
+                    }
+                )
+
+        batch_summary = []
+        for item, d in zip(self.queue, prepared_documents):
+            if isinstance(item, (OptimizedPDFResult, OptimizedPPTXResult)):
+                savings = f"{(1 - (item.optimized_size_bytes / max(item.original_size_bytes, 1))) * 100:.1f}%"
+            else:
+                savings = "0.0%"
+            batch_summary.append({
+                "file": d["filename"],
+                "type": d["doc_type"],
+                "images": d["image_count"],
+                "savings": savings,
+            })
 
         return {
             "status": "ready_for_ai",
             "prompt": user_prompt,
             "total_files_processed": len(self.queue),
-            "batch_summary": [
-                {
-                    "file": d["filename"],
-                    "type": d["doc_type"],
-                    "images": d["image_count"],
-                    "savings": f"{(1 - (item.optimized_size_bytes / max(item.original_size_bytes, 1))) * 100:.1f}%",
-                }
-                for item, d in zip(self.queue, prepared_documents)
-            ],
+            "batch_summary": batch_summary,
             "documents": prepared_documents,
         }
 
