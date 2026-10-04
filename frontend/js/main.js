@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('text-input');
     const fileInput = document.getElementById('file-input');
     const output = document.getElementById('output');
-
+    console.log('mermaid loaded:', typeof mermaid, 'version:', mermaid?.version);
+    // ===== EXISTING FILE UPLOAD =====
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -61,11 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (f.type === 'pptx') {
                 const meta = document.createElement('p');
-                // text
                 meta.textContent =
                     `${f.slide_count} slide(s), ${f.images.length} image(s)`;
                 card.appendChild(meta);
-                // image
+
                 const imgsBySlide = {};
                 for (const img of f.images) {
                     (imgsBySlide[img.slide_number] ||= []).push(img);
@@ -101,14 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.appendChild(slide);
                 }
             }
+
             if (f.type === 'audio') {
                 const p = document.createElement('p');
                 p.textContent = `Audio (${f.content_type}) — ${f.size_bytes} bytes`;
                 card.appendChild(p);
-
-                const url = URL.createObjectURL(
-                    new Blob([])
-                );
             }
 
             if (f.type === 'video') {
@@ -119,5 +116,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
             output.appendChild(card);
         }
+    }
+
+    // ===== NEW: MERMAID RENDERING =====
+    const mermaidInput  = document.getElementById('mermaid-input');
+    const mermaidBtn    = document.getElementById('render-mermaid');
+    const mermaidOutput = document.getElementById('mermaid-output');
+
+    if (typeof mermaid === 'undefined') {
+        mermaidOutput.innerHTML =
+            '<p class="mermaid-error">Mermaid library failed to load. Check that mermaid.min.js exists in frontend/js/.</p>';
+        mermaidBtn.addEventListener('click', () => {
+            mermaidOutput.innerHTML =
+                '<p class="mermaid-error">Mermaid library is not loaded. Cannot render diagram.</p>';
+        });
+    } else {
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        let renderCounter = 0;
+
+        function cleanMermaidCode(raw) {
+            if (!raw) return '';
+            let code = raw.trim();
+            // Extract from markdown code fences if present anywhere in the text
+            const fence = code.match(/```(?:mermaid)?\s*([\s\S]*?)```/i);
+            if (fence) {
+                code = fence[1];
+            }
+            return code.trim();
+        }
+
+        async function renderMermaid(code) {
+            mermaidOutput.innerHTML = '';
+            const id = 'mermaid-svg-' + (++renderCounter);
+
+            try {
+                const { svg } = await mermaid.render(id, code);
+                mermaidOutput.innerHTML = svg;
+            } catch (err) {
+                // Clean up any stale elements injected into the DOM by Mermaid
+                const staleD = document.getElementById('d' + id);
+                if (staleD) staleD.remove();
+                const staleSvg = document.getElementById(id);
+                if (staleSvg) staleSvg.remove();
+
+                const p = document.createElement('p');
+                p.className = 'mermaid-error';
+                p.textContent = 'Mermaid error: ' + (err?.message ?? err);
+                mermaidOutput.appendChild(p);
+                console.error('Mermaid render failed:', err);
+            }
+        }
+
+        mermaidBtn.addEventListener('click', () => {
+            const code = cleanMermaidCode(mermaidInput.value);
+            if (!code) {
+                mermaidOutput.innerHTML = '<em>Please enter some mermaid code.</em>';
+                return;
+            }
+            renderMermaid(code);
+        });
     }
 });
