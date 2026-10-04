@@ -16,6 +16,16 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 app.include_router(api_router, prefix="/api")
 app.include_router(api_authenticator, prefix="/api")
 
+try:
+    from app.main import app as factlock_app
+    app.mount("/factlock", factlock_app)
+    # Also expose factlock API routes on the main app
+    for r in factlock_app.routes:
+        if getattr(r, "path", "").startswith("/api/"):
+            app.routes.append(r)
+except Exception:
+    pass
+
 @app.get("/")
 @app.get("/index.html")
 async def serve_index():
