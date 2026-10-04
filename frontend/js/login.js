@@ -290,7 +290,34 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(msg);
       }
 
-      setConfirmationState(email);
+      // Direct login: store authentication state and redirect immediately
+      const userObj = data.user || data.data?.user || { email, first_name: firstName };
+      const orgObj = data.organization || data.data?.organization || { name: finalOrg, icon: '' };
+      const token = data.access_token || data.data?.access_token || 'active_session';
+
+      const authPayload = {
+        token,
+        email,
+        username: firstName || userObj.first_name || email.split('@')[0],
+        user: userObj,
+        organization: orgObj,
+        remember: true,
+        timestamp: new Date().toISOString(),
+      };
+
+      localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      localStorage.setItem('organizationName', orgObj.name || finalOrg);
+      if (orgObj.icon) {
+        localStorage.setItem('organizationIcon', orgObj.icon);
+      }
+      localStorage.setItem('username', authPayload.username);
+
+      setStatus(signupStatus, 'Account created! Redirecting to workspace...', 'success');
+
+      window.setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 400);
     } catch (error) {
       setStatus(signupStatus, error.message || 'Registration failed.', 'error');
       signUpButton.disabled = false;

@@ -6,7 +6,14 @@ auth = APIRouter(tags=["Authentication"])
 @auth.post("/auth/signup")
 async def signup(data: SignUpRequest):
     result = await sign_up_user(data)
-    return {"message": "User registered successfully!", "data": result}
+    return {
+        "message": "User registered successfully!",
+        "access_token": result.get("access_token"),
+        "token_type": result.get("token_type", "bearer"),
+        "user": result.get("user"),
+        "organization": result.get("organization"),
+        "data": result
+    }
 
 @auth.post("/auth/login")
 async def login(data: LoginRequest):

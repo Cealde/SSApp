@@ -216,7 +216,44 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         async with httpx.AsyncClient() as client:
             insert_resp = await client.post(user_details_url, json=user_details_data, headers=insert_headers)
 
-        return signup_result
+        # Step 4: If signup did not return an access_token, perform immediate sign-in to get active session
+        if not token:
+            try:
+                direct_login = await sign_in_user(LoginRequest(email=email, password=auth_data.password))
+                return direct_login
+            except Exception:
+                pass
+
+        # Retrieve organization icon if available
+        org_icon = ""
+        if org_name and org_name.lower() != "unincorporated":
+            try:
+                async with httpx.AsyncClient() as client:
+                    org_resp = await client.get(
+                        f"{SUPABASE_URL}/rest/v1/organization?name=eq.{org_name}&select=name,icon",
+                        headers=get_headers()
+                    )
+                if org_resp.status_code == 200 and org_resp.json():
+                    org_info = org_resp.json()[0]
+                    org_icon = org_info.get("icon") or ""
+            except Exception:
+                pass
+
+        user_obj = signup_result.get("user") or {}
+        return {
+            "access_token": token or f"session_{user_obj.get('id', '')}",
+            "token_type": "bearer",
+            "user": {
+                "id": user_obj.get("id"),
+                "email": email,
+                "first_name": first_name
+            },
+            "organization": {
+                "name": org_name,
+                "icon": org_icon
+            },
+            "message": "User registered and logged in successfully."
+        }
     else:
         # Local dev fallback
         if email in _LOCAL_USERS:
@@ -228,10 +265,20 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             "organization": org_name
         }
         user_id = f"usr_{abs(hash(email)):x}"
+        org_info = _LOCAL_ORGS.get(org_name.lower(), {})
         return {
-            "id": user_id,
-            "email": email,
-            "message": "User registered successfully."
+            "access_token": f"dev_token_{user_id}",
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": email,
+                "first_name": first_name
+            },
+            "organization": {
+                "name": org_name,
+                "icon": org_info.get("icon", "")
+            },
+            "message": "User registered and logged in successfully."
         }
 
 
