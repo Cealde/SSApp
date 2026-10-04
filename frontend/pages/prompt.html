@@ -100,17 +100,76 @@
       <h2 class="sidebar-title">Generation Settings</h2>
       <div class="config-sidebar-content">
         <div class="config-group">
-          <label for="outFormats">Output Formats (Ctrl+click)</label>
-          <select id="outFormats" multiple size="4">
-            <option value="presentation" selected>Presentation</option>
-            <option value="website">Website</option>
-            <option value="mermaid">Mermaid Diagram</option>
-            <option value="advisory">Advisory Document</option>
-            <option value="exec_summary">Executive Summary</option>
-            <option value="video">Video Package</option>
-            <option value="linkedin">LinkedIn Post</option>
-            <option value="twitter">Twitter/X Post</option>
-          </select>
+          <label class="config-label">Output Formats (Click to toggle)</label>
+          <div class="format-toggle-grid" id="formatToggleGrid" role="group" aria-label="Output Formats">
+            <button type="button" class="format-chip active" data-value="presentation" aria-pressed="true">
+              <span class="chip-check">✓</span>
+              <span class="chip-icon">📊</span>
+              <span class="chip-label">Presentation</span>
+            </button>
+            <button type="button" class="format-chip" data-value="website" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">🌐</span>
+              <span class="chip-label">Website</span>
+            </button>
+            <button type="button" class="format-chip" data-value="mermaid" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">🔀</span>
+              <span class="chip-label">Mermaid Diagram</span>
+            </button>
+            <button type="button" class="format-chip" data-value="advisory" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">📑</span>
+              <span class="chip-label">Advisory Document</span>
+            </button>
+            <button type="button" class="format-chip" data-value="exec_summary" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">📋</span>
+              <span class="chip-label">Executive Summary</span>
+            </button>
+            <button type="button" class="format-chip" data-value="video" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">🎬</span>
+              <span class="chip-label">Video Package</span>
+            </button>
+            <button type="button" class="format-chip" data-value="linkedin" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">💼</span>
+              <span class="chip-label">LinkedIn Post</span>
+            </button>
+            <button type="button" class="format-chip" data-value="twitter" aria-pressed="false">
+              <span class="chip-check"></span>
+              <span class="chip-icon">🐦</span>
+              <span class="chip-label">Twitter/X Post</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Presentation Options (Visible when Presentation is toggled) -->
+        <div class="presentation-settings-panel" id="presentationSettingsPanel">
+          <div class="config-subgroup">
+            <label for="presTheme">Slide Theme</label>
+            <select id="presTheme">
+              <option value="amber" selected>Warm Amber (Dark)</option>
+              <option value="navy">Executive Navy (Dark)</option>
+              <option value="light">Minimalist (Light)</option>
+            </select>
+          </div>
+          <div class="config-subgroup">
+            <label for="presSlideCount">Slide Count</label>
+            <select id="presSlideCount">
+              <option value="auto" selected>Auto (Based on content)</option>
+              <option value="concise">Short (3-5 slides)</option>
+              <option value="standard">Standard (5-8 slides)</option>
+              <option value="detailed">In-depth (8-12 slides)</option>
+            </select>
+          </div>
+          <div class="config-subgroup">
+            <label>Output Format</label>
+            <div class="pres-badge-info">
+              <span>📊 PowerPoint (.pptx) + Slide Deck</span>
+            </div>
+          </div>
         </div>
 
         <div class="config-group">

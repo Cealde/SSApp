@@ -565,8 +565,125 @@ html, body {
   background: rgba(226, 162, 33, 0.06);
 }
 
-.config-group select[multiple] {
-  height: 110px;
+/* Format Toggle Grid */
+.format-toggle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.format-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(226, 162, 33, 0.15);
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 180ms ease;
+  text-align: left;
+  user-select: none;
+  width: 100%;
+}
+
+.format-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(226, 162, 33, 0.35);
+  color: var(--text);
+}
+
+.format-chip.active {
+  background: rgba(226, 162, 33, 0.22);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(226, 162, 33, 0.25);
+  font-weight: 500;
+}
+
+.format-chip .chip-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(223, 212, 192, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: transparent;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.format-chip.active .chip-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0907;
+}
+
+.format-chip .chip-icon {
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.format-chip .chip-label {
+  flex: 1;
+}
+
+/* Presentation Settings Panel */
+.presentation-settings-panel {
+  background: rgba(226, 162, 33, 0.07);
+  border: 1px solid rgba(226, 162, 33, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.config-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-subgroup label {
+  font-size: 0.76rem;
+  color: var(--accent);
+  font-family: var(--font-title);
+  letter-spacing: 0.02em;
+}
+
+.config-subgroup select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(226, 162, 33, 0.2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+}
+
+.pres-badge-info {
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: rgba(226, 162, 33, 0.12);
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px dashed rgba(226, 162, 33, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
 .config-group select option {

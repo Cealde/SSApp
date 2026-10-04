@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const brandIconImg = document.getElementById('brandIconImg');
   const brandText = document.getElementById('brandText');
   const chatContainer = document.getElementById('chatContainer');
+  const formatToggleGrid = document.getElementById('formatToggleGrid');
+  const presentationSettingsPanel = document.getElementById('presentationSettingsPanel');
 
   // Interactive AI Selection Area for website customization
   const aiSelectionArea = document.getElementById('aiSelectionArea');
@@ -88,6 +90,57 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, '&#039;');
   }
 
+  // --- Output Formats Interactive Toggle Setup ---
+  if (formatToggleGrid) {
+    const chips = formatToggleGrid.querySelectorAll('.format-chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const wasActive = chip.classList.contains('active');
+        const checkEl = chip.querySelector('.chip-check');
+
+        if (wasActive) {
+          chip.classList.remove('active');
+          chip.setAttribute('aria-pressed', 'false');
+          if (checkEl) checkEl.textContent = '';
+        } else {
+          chip.classList.add('active');
+          chip.setAttribute('aria-pressed', 'true');
+          if (checkEl) checkEl.textContent = '✓';
+        }
+
+        // Toggle Presentation Settings visibility
+        if (chip.dataset.value === 'presentation' && presentationSettingsPanel) {
+          presentationSettingsPanel.style.display = !wasActive ? 'flex' : 'none';
+        }
+      });
+    });
+  }
+
+  // Helper to read configuration parameters from right sidebar
+  function readConfig() {
+    const activeChips = formatToggleGrid
+      ? Array.from(formatToggleGrid.querySelectorAll('.format-chip.active'))
+      : [];
+    let formats = activeChips.map((c) => c.dataset.value);
+    if (formats.length === 0) {
+      formats = ['presentation'];
+    }
+
+    return {
+      formats: formats,
+      presTheme: document.getElementById('presTheme')?.value || 'amber',
+      presSlideCount: document.getElementById('presSlideCount')?.value || 'auto',
+      audience: document.getElementById('outAudience')?.value.trim() || '',
+      tone: document.getElementById('outTone')?.value || 'professional',
+      language: document.getElementById('outLanguage')?.value.trim() || 'English',
+      level: document.getElementById('outLevel')?.value || 'standard',
+      objective: document.getElementById('outObjective')?.value.trim() || '',
+      style: document.getElementById('outStyle')?.value.trim() || '',
+      orgName: orgName || '',
+      orgIconUrl: orgIconUrl || '',
+    };
+  }
+
   // Check if backend has initial code from /api/give-code
   fetch('/api/give-code')
     .then((res) => (res.ok ? res.json() : null))
@@ -96,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (code && code.trim()) {
         const initialId = `chat-init-${Date.now()}`;
         createLoadingMessageGroup('Initial Workspace Draft', initialId);
-        displayAiResponse(code, 'Initial Workspace Draft', initialId);
+        displayAiResponse({ ai_result: code }, 'Initial Workspace Draft', initialId);
       }
     })
     .catch(() => {});
@@ -161,10 +214,319 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Helper to render Markdown or Presentation outline as beautiful styled HTML
+  // Helper to convert base64 string to a downloadable Blob
+  function base64ToBlob(base64, mimeType = 'application/octet-stream') {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
+  // Generate Interactive 16:9 Presentation Slide Deck HTML
+  function generateInteractiveSlideDeck(rawMarkdown, theme = 'amber', company = 'SatyaSetu') {
+    const cleanText = rawMarkdown.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+    let rawBlocks = [];
+
+    if (cleanText.includes('\n---\n') || cleanText.includes('\n--- \n') || cleanText.includes('\n---\r\n')) {
+      rawBlocks = cleanText.split(/\n\s*---\s*\n/).filter((b) => b.trim());
+    } else if (/##\s+Slide/i.test(cleanText)) {
+      rawBlocks = cleanText.split(/(?=##\s+Slide)/i).filter((b) => b.trim());
+    } else if (/##\s+/i.test(cleanText)) {
+      rawBlocks = cleanText.split(/(?=##\s+)/i).filter((b) => b.trim());
+    } else {
+      rawBlocks = [cleanText];
+    }
+
+    const slides = rawBlocks.map((block, idx) => {
+      const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+      let title = '';
+      let subtitle = '';
+      const bullets = [];
+      const isTitle = idx === 0 || block.toLowerCase().slice(0, 80).includes('title slide');
+
+      for (let line of lines) {
+        if (line.startsWith('# ') || line.startsWith('## ') || line.startsWith('### ')) {
+          const cand = line.replace(/^#{1,3}\s+/, '').replace(/^Slide\s+\d+:?\s*/i, '').trim();
+          if (!title) title = cand;
+          else bullets.push(cand);
+        } else if (/^\*\*(?:Slide\s+\d+:?\s*)?(.*?)\*\*$/i.test(line)) {
+          const cand = line.replace(/^\*\*(?:Slide\s+\d+:?\s*)?|\*\*$/gi, '').trim();
+          if (!title) title = cand;
+          else bullets.push(cand);
+        } else if (line.startsWith('* ') || line.startsWith('- ') || line.startsWith('• ')) {
+          bullets.push(line.replace(/^[\*\-•]\s+/, '').trim());
+        } else if (/^\d+\.\s+/.test(line)) {
+          bullets.push(line.replace(/^\d+\.\s+/, '').trim());
+        } else {
+          if (!title) title = line.replace(/[#*]/g, '').trim();
+          else if (isTitle && !subtitle) subtitle = line.replace(/[#*]/g, '').trim();
+          else bullets.push(line);
+        }
+      }
+
+      return {
+        number: idx + 1,
+        title: title || `Slide ${idx + 1}`,
+        subtitle: subtitle,
+        bullets: bullets,
+        isTitle: isTitle,
+      };
+    });
+
+    const isLight = theme === 'light';
+    const isNavy = theme === 'navy';
+    const bg = isLight ? '#f8fafc' : isNavy ? '#0f172a' : '#110e08';
+    const cardBg = isLight ? '#ffffff' : isNavy ? '#1e293b' : '#17130b';
+    const text = isLight ? '#1e293b' : isNavy ? '#e2e8f0' : '#fbf7ee';
+    const titleColor = isLight ? '#0f172a' : isNavy ? '#38bdf8' : '#e2a221';
+    const accent = isLight ? '#0284c7' : isNavy ? '#38bdf8' : '#e2a221';
+    const muted = isLight ? '#64748b' : isNavy ? '#94a3b8' : '#dfd4c0';
+
+    let slidesHtml = slides.map((s, idx) => {
+      if (s.isTitle) {
+        return `
+          <div class="slide slide-title-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
+            <span class="slide-org-badge">${escapeHtml(company || 'SatyaSetu')} Presentation</span>
+            <h1 class="slide-main-title">${escapeHtml(s.title)}</h1>
+            ${s.subtitle ? `<p class="slide-subtitle">${escapeHtml(s.subtitle)}</p>` : ''}
+            <div class="slide-title-footer">Widescreen Presentation Deck  •  ${slides.length} Slides</div>
+          </div>
+        `;
+      } else {
+        const bulletList = s.bullets.map((b) => `<li>${escapeHtml(b.replace(/\*\*|__/g, ''))}</li>`).join('');
+        return `
+          <div class="slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
+            <div class="slide-header">
+              <span class="slide-num-pill">Slide ${s.number}</span>
+              <h2 class="slide-content-title">${escapeHtml(s.title)}</h2>
+            </div>
+            <ul class="slide-bullets">${bulletList}</ul>
+            <div class="slide-footer">
+              <span>${escapeHtml(company || 'SatyaSetu')}</span>
+              <span>Slide ${s.number} of ${slides.length}</span>
+            </div>
+          </div>
+        `;
+      }
+    }).join('\n');
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: ${bg};
+      color: ${text};
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .deck-container {
+      width: 100%;
+      max-width: 860px;
+      aspect-ratio: 16 / 9;
+      background: ${cardBg};
+      border: 1.5px solid rgba(226, 162, 33, 0.25);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .slide {
+      flex: 1;
+      padding: 36px 44px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: slideIn 0.25s ease-out;
+    }
+    .slide.active { display: flex; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.985); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .slide-title-slide {
+      align-items: center;
+      text-align: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .slide-org-badge {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(226, 162, 33, 0.15);
+      border: 1px solid ${accent};
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: ${titleColor};
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .slide-main-title {
+      font-family: 'Momo Trust Display', serif;
+      font-size: 2.3rem;
+      color: ${titleColor};
+      margin: 8px 0;
+      line-height: 1.25;
+      max-width: 90%;
+    }
+    .slide-subtitle {
+      font-size: 1.15rem;
+      color: ${muted};
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .slide-title-footer {
+      font-size: 0.85rem;
+      color: ${muted};
+      margin-top: 14px;
+      opacity: 0.8;
+    }
+    .slide-header {
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(226, 162, 33, 0.2);
+      padding-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slide-num-pill {
+      font-size: 0.72rem;
+      background: rgba(226, 162, 33, 0.2);
+      color: ${titleColor};
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .slide-content-title {
+      font-family: 'Momo Trust Display', serif;
+      font-size: 1.7rem;
+      color: ${titleColor};
+      margin: 0;
+    }
+    .slide-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      justify-content: center;
+    }
+    .slide-bullets li {
+      font-size: 1.05rem;
+      color: ${text};
+      line-height: 1.55;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .slide-bullets li::before {
+      content: '▪';
+      color: ${accent};
+      font-size: 1.4rem;
+      line-height: 1;
+      margin-top: 1px;
+    }
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: ${muted};
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 860px;
+      margin-top: 14px;
+      padding: 0 4px;
+    }
+    .deck-btn {
+      background: rgba(226, 162, 33, 0.15);
+      border: 1px solid rgba(226, 162, 33, 0.35);
+      color: #fbf7ee;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .deck-btn:hover:not(:disabled) {
+      background: ${accent};
+      color: #0a0907;
+      transform: translateY(-1px);
+    }
+    .deck-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .deck-counter {
+      font-size: 0.88rem;
+      color: ${muted};
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-container" id="deckContainer">
+    ${slidesHtml}
+  </div>
+  <div class="deck-controls">
+    <button type="button" class="deck-btn" id="prevBtn" onclick="prevSlide()">◀ Previous</button>
+    <div class="deck-counter" id="slideCounter">Slide 1 of ${slides.length}</div>
+    <button type="button" class="deck-btn" id="nextBtn" onclick="nextSlide()">Next ▶</button>
+  </div>
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    function updateSlide() {
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === currentSlide));
+      document.getElementById('slideCounter').textContent = 'Slide ' + (currentSlide + 1) + ' of ' + slides.length;
+      document.getElementById('prevBtn').disabled = (currentSlide === 0);
+      document.getElementById('nextBtn').disabled = (currentSlide === slides.length - 1);
+    }
+    function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
+    function nextSlide() { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { nextSlide(); }
+      else if (e.key === 'ArrowLeft') { prevSlide(); }
+    });
+    updateSlide();
+  </script>
+</body>
+</html>`;
+  }
+
+  // Helper to render Markdown or outline text as clean HTML
   function markdownToHtml(rawMarkdown) {
     const lines = rawMarkdown.split('\n');
-    let inSlide = false;
     let htmlLines = [];
 
     htmlLines.push(`<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -197,48 +559,10 @@ document.addEventListener('DOMContentLoaded', () => {
         strong { color: #fbf7ee; font-weight: 600; }
         code { background: rgba(226, 162, 33, 0.12); color: #e2a221; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
         pre { background: #0a0907; border: 1px solid rgba(226, 162, 33, 0.2); padding: 14px; border-radius: 8px; overflow-x: auto; color: #fbf7ee; }
-        .slide-card {
-          background: rgba(25, 21, 13, 0.9);
-          border: 1px solid rgba(226, 162, 33, 0.25);
-          border-radius: 12px;
-          padding: 20px 24px;
-          margin-bottom: 20px;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        }
-        .slide-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-          border-bottom: 1px solid rgba(226, 162, 33, 0.2);
-          padding-bottom: 8px;
-        }
-        .slide-title {
-          font-family: 'Momo Trust Display', serif;
-          font-size: 1.25rem;
-          color: #e2a221;
-          margin: 0;
-        }
       </style>
     </head><body>`);
 
-    let currentCardContent = [];
-
     for (let line of lines) {
-      const trimmed = line.trim();
-
-      // Check for slide card markers like '--- Slide' or '## Slide' or '---'
-      if (trimmed.startsWith('--- Slide') || (trimmed.startsWith('## Slide') && inSlide) || (trimmed === '---' && inSlide)) {
-        if (inSlide) {
-          htmlLines.push(`<div class="slide-card">${currentCardContent.join('\n')}</div>`);
-          currentCardContent = [];
-        }
-        inSlide = true;
-        const slideTitle = trimmed.replace(/^--- Slide \d+:?|^## Slide \d+:?|^---/i, '').trim() || 'Slide Content';
-        currentCardContent.push(`<div class="slide-header"><h3 class="slide-title">${escapeHtml(slideTitle)}</h3></div>`);
-        continue;
-      }
-
       let formatted = line;
       if (formatted.startsWith('# ')) {
         formatted = `<h1>${escapeHtml(formatted.slice(2))}</h1>`;
@@ -251,16 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (formatted.trim().length > 0) {
         formatted = `<p>${escapeHtml(formatted)}</p>`;
       }
-
-      if (inSlide) {
-        currentCardContent.push(formatted);
-      } else {
-        htmlLines.push(formatted);
-      }
-    }
-
-    if (inSlide && currentCardContent.length > 0) {
-      htmlLines.push(`<div class="slide-card">${currentCardContent.join('\n')}</div>`);
+      htmlLines.push(formatted);
     }
 
     htmlLines.push(`</body></html>`);
@@ -309,15 +624,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     iframeWrapper.innerHTML = `
       <iframe class="preview-iframe" title="Rendered Output Preview" srcdoc="${escapeHtml(loadingHtml)}"></iframe>
-      <button type="button" class="dashboard-btn download-result-btn" style="position: absolute; bottom: 12px; right: 12px; z-index: 10; display: none;">
-        Download Zip
-      </button>
+      <div class="message-actions-bar" style="position: absolute; bottom: 12px; right: 12px; z-index: 10; display: flex; gap: 8px;">
+        <button type="button" class="dashboard-btn download-pptx-btn" style="display: none; background: #e2a221; color: #000; font-weight: 600;">
+          📊 Download PowerPoint (.pptx)
+        </button>
+        <button type="button" class="dashboard-btn download-result-btn" style="display: none;">
+          📦 Download ZIP
+        </button>
+      </div>
     `;
     groupWrapper.appendChild(iframeWrapper);
 
     chatContainer.appendChild(groupWrapper);
 
-    // Auto-scroll to bottom immediately
     setTimeout(() => {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }, 20);
@@ -326,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Update existing message group with final AI response
-  function displayAiResponse(rawContent, promptText, chatId, isError = false) {
+  function displayAiResponse(responseData, promptText, chatId, isError = false) {
     if (!chatContainer) return;
 
     let groupWrapper = document.getElementById(`chat-group-${chatId}`);
@@ -335,8 +654,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (!groupWrapper) return;
 
+    const rawContent = typeof responseData === 'object' && responseData.ai_result !== undefined
+      ? responseData.ai_result
+      : responseData;
+
+    const isPresentation = (responseData?.is_presentation) ||
+      (typeof rawContent === 'string' && (/--- Slide|\bSlide \d+:/i.test(rawContent) || /## Slide/i.test(rawContent))) ||
+      (promptText && /presentation|slide deck|slides/i.test(promptText));
+
+    const pptxBase64 = responseData?.pptx_base64 || null;
+
     let htmlToDisplay = '';
-    let rawTextContent = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent, null, 2);
+    const rawTextContent = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent, null, 2);
 
     if (isError) {
       htmlToDisplay = `<!DOCTYPE html><html><head>
@@ -348,6 +677,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <h3 style="font-family:'Momo Trust Display',serif;color:#ff6b6b;margin-top:0;font-size:1.3rem;">⚠️ Generation Error</h3>
         <p style="font-size:15px;line-height:1.6;color:#dfd4c0;">${escapeHtml(rawTextContent)}</p>
       </body></html>`;
+    } else if (isPresentation && typeof rawContent === 'string') {
+      // Render as interactive slide deck!
+      const presTheme = document.getElementById('presTheme')?.value || 'amber';
+      htmlToDisplay = generateInteractiveSlideDeck(rawContent, presTheme, orgName || 'SatyaSetu');
     } else if (typeof rawContent === 'string' && (rawContent.includes('```mermaid') || rawContent.trim().startsWith('graph ') || rawContent.trim().startsWith('flowchart '))) {
       const cleanCode = rawContent.replace(/```mermaid/g, '').replace(/```/g, '').trim();
       htmlToDisplay = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -381,18 +714,99 @@ document.addEventListener('DOMContentLoaded', () => {
       iframe.srcdoc = htmlToDisplay;
     }
 
-    const downloadBtn = groupWrapper.querySelector('.download-result-btn');
-    if (downloadBtn && !isError) {
-      downloadBtn.style.display = 'inline-flex';
-      downloadBtn.onclick = async () => {
+    // Configure Action Buttons
+    const downloadPptxBtn = groupWrapper.querySelector('.download-pptx-btn');
+    const downloadZipBtn = groupWrapper.querySelector('.download-result-btn');
+
+    if (!isError && isPresentation) {
+      if (downloadPptxBtn) {
+        downloadPptxBtn.style.display = 'inline-flex';
+        downloadPptxBtn.onclick = async () => {
+          if (pptxBase64) {
+            const blob = base64ToBlob(pptxBase64, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SathyaSethu_Presentation_${Date.now()}.pptx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } else {
+            // Request PPTX export from backend
+            try {
+              downloadPptxBtn.disabled = true;
+              downloadPptxBtn.textContent = 'Generating PPTX...';
+              const res = await fetch('/api/export-pptx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  markdown: rawTextContent,
+                  theme: document.getElementById('presTheme')?.value || 'amber',
+                  org_name: orgName || 'SatyaSetu'
+                })
+              });
+              if (!res.ok) throw new Error('PPTX export failed');
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `SathyaSethu_Presentation_${Date.now()}.pptx`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              alert('Could not download PPTX: ' + err.message);
+            } finally {
+              downloadPptxBtn.disabled = false;
+              downloadPptxBtn.textContent = '📊 Download PowerPoint (.pptx)';
+            }
+          }
+        };
+      }
+    } else if (downloadPptxBtn) {
+      downloadPptxBtn.style.display = 'none';
+    }
+
+    if (downloadZipBtn && !isError) {
+      downloadZipBtn.style.display = 'inline-flex';
+      downloadZipBtn.onclick = async () => {
         if (!window.JSZip) {
           alert('JSZip library not available.');
           return;
         }
         const zip = new JSZip();
-        zip.file('index.html', htmlToDisplay);
-        if (typeof rawContent === 'string' && !rawContent.includes('<html')) {
-          zip.file('content.md', rawContent);
+
+        // If it's a presentation, include the real PPTX file in the ZIP!
+        if (isPresentation) {
+          let pptxBlob = null;
+          if (pptxBase64) {
+            pptxBlob = base64ToBlob(pptxBase64, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+          } else {
+            try {
+              const res = await fetch('/api/export-pptx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  markdown: rawTextContent,
+                  theme: document.getElementById('presTheme')?.value || 'amber',
+                  org_name: orgName || 'SatyaSetu'
+                })
+              });
+              if (res.ok) pptxBlob = await res.blob();
+            } catch (e) {}
+          }
+          if (pptxBlob) {
+            zip.file('presentation.pptx', pptxBlob);
+          }
+          zip.file('presentation.html', htmlToDisplay);
+          zip.file('slides.md', rawTextContent);
+        } else {
+          zip.file('index.html', htmlToDisplay);
+          if (typeof rawContent === 'string' && !rawContent.includes('<html')) {
+            zip.file('content.md', rawContent);
+          }
         }
 
         const blob = await zip.generateAsync({ type: 'blob' });
@@ -405,8 +819,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       };
-    } else if (downloadBtn) {
-      downloadBtn.style.display = 'none';
+    } else if (downloadZipBtn) {
+      downloadZipBtn.style.display = 'none';
     }
 
     setTimeout(() => {
@@ -539,32 +953,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Helper to read configuration parameters from right sidebar
-  function readConfig() {
-    const outFormatsSelect = document.getElementById('outFormats');
-    const formats = outFormatsSelect
-      ? Array.from(outFormatsSelect.selectedOptions).map((opt) => opt.value)
-      : ['presentation'];
-
-    return {
-      formats: formats.length > 0 ? formats : ['presentation'],
-      audience: document.getElementById('outAudience')?.value.trim() || '',
-      tone: document.getElementById('outTone')?.value || 'professional',
-      language: document.getElementById('outLanguage')?.value.trim() || 'English',
-      level: document.getElementById('outLevel')?.value || 'standard',
-      objective: document.getElementById('outObjective')?.value.trim() || '',
-      style: document.getElementById('outStyle')?.value.trim() || '',
-      orgName: orgName || '',
-      orgIconUrl: orgIconUrl || '',
-    };
-  }
-
   // Form Submission
   if (promptForm) {
     promptForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Guard: do not double submit if generation is actively running
       if (isGenerating) {
         return;
       }
@@ -577,10 +970,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const promptText = text || `Uploaded ${attachedFiles.length} file(s)`;
       const chatId = `chat-${Date.now()}`;
 
-      // Create loading message group immediately with single persistent chatId
       createLoadingMessageGroup(promptText, chatId);
 
-      // Store files and clear inputs immediately
       const filesToSend = [...attachedFiles];
       promptInput.value = '';
       promptInput.style.height = 'auto';
@@ -588,7 +979,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAttachedFiles();
       if (fileInput) fileInput.value = '';
 
-      // Set state to generating (changes button to Stop square)
       activeAbortController = new AbortController();
       setGeneratingState(true, chatId);
 
@@ -663,13 +1053,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(followUpData.detail || 'Failed to generate website code');
               }
 
-              const finalResult = followUpData.ai_result || followUpData.ai_response || '<p>Website generated successfully.</p>';
-              displayAiResponse(finalResult, `${promptText} (Website)`, followUpChatId);
+              displayAiResponse(followUpData, `${promptText} (Website)`, followUpChatId);
 
               chatSessions.push({
                 id: followUpChatId,
                 prompt: `${promptText} (Website)`,
-                htmlContent: finalResult,
+                content: followUpData.ai_result,
               });
 
               if (chatHistoryList) {
@@ -695,16 +1084,15 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        // Normal successful generation
-        const contentToDisplay = aiResult || data.final_output || data.message || 'No response content';
-        displayAiResponse(contentToDisplay, promptText, chatId);
+        // Display response
+        displayAiResponse(data, promptText, chatId);
 
         // Add entry to chat history with active indicator arrow (◄)
         const chatTitle = text.length > 22 ? text.slice(0, 20) + '...' : promptText;
         chatSessions.push({
           id: chatId,
           prompt: promptText,
-          content: contentToDisplay,
+          content: aiResult || data.final_output,
         });
 
         if (chatHistoryList) {

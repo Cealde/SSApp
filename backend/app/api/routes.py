@@ -47,11 +47,32 @@ def classify(filename: str, ctype: str) -> str:
 
 from typing import List, Dict, Any, Optional
 import json
+import base64
+from fastapi.responses import Response
 from backend.app.ai.gemini_service import generate_content
+from backend.app.processing.presentation_generator import parse_slides_from_markdown, generate_pptx_bytes
 
 class TextPayload(BaseModel):
     text: str
     config: Optional[Dict[str, Any]] = None
+
+class ExportPPTXRequest(BaseModel):
+    markdown: str
+    theme: Optional[str] = "amber"
+    org_name: Optional[str] = "SatyaSetu"
+
+@router.post("/export-pptx")
+async def export_pptx_endpoint(payload: ExportPPTXRequest):
+    try:
+        slides = parse_slides_from_markdown(payload.markdown)
+        pptx_bytes = generate_pptx_bytes(slides, theme_name=payload.theme or "amber", org_name=payload.org_name or "SatyaSetu")
+        return Response(
+            content=pptx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            headers={"Content-Disposition": "attachment; filename=presentation.pptx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/give")
 async def submit_text(payload: TextPayload):
@@ -73,7 +94,32 @@ async def submit_text(payload: TextPayload):
             except Exception as e:
                 pass
 
-        return {"ai_result": ai_result, "message": "Generated successfully."}
+        formats = config.get("formats", [])
+        is_pres = "presentation" in formats or any(kw in payload.text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        
+        pptx_base64 = None
+        slides_data = None
+        if is_pres and isinstance(ai_result, str):
+            try:
+                slides_data = parse_slides_from_markdown(ai_result)
+                if slides_data:
+                    theme = config.get("presTheme", "amber")
+                    org_name = config.get("orgName", "SatyaSetu")
+                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name)
+                    pptx_base64 = base64.b64encode(pptx_bytes).decode("ascii")
+            except Exception as e:
+                print("Failed to auto-generate PPTX:", e)
+
+        resp = {
+            "ai_result": ai_result,
+            "message": "Generated successfully.",
+            "is_presentation": is_pres and bool(pptx_base64),
+        }
+        if pptx_base64:
+            resp["pptx_base64"] = pptx_base64
+            resp["slides"] = slides_data
+
+        return resp
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -209,12 +255,34 @@ async def give_files(
             except Exception as e:
                 pass
                 
-        return {
+        formats = config_data.get("formats", [])
+        is_pres = "presentation" in formats or any(kw in text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        
+        pptx_base64 = None
+        slides_data = None
+        if is_pres and isinstance(ai_result, str):
+            try:
+                slides_data = parse_slides_from_markdown(ai_result)
+                if slides_data:
+                    theme = config_data.get("presTheme", "amber")
+                    org_name = config_data.get("orgName", "SatyaSetu")
+                    pptx_bytes = generate_pptx_bytes(slides_data, theme_name=theme, org_name=org_name)
+                    pptx_base64 = base64.b64encode(pptx_bytes).decode("ascii")
+            except Exception as e:
+                print("Failed to auto-generate PPTX in give-files:", e)
+
+        resp = {
             "message": f"Processed {len(received)} file(s) and generated output.",
             "text": text,
             "files": received,
             "final_output": final_output,
             "ai_result": ai_result,
+            "is_presentation": is_pres and bool(pptx_base64),
         }
+        if pptx_base64:
+            resp["pptx_base64"] = pptx_base64
+            resp["slides"] = slides_data
+
+        return resp
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
