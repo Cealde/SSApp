@@ -1,0 +1,20 @@
+def reverse_only_alphabets(s):
+    s = list(s)              
+    left = 0
+    right = len(s) - 1
+
+    while left < right:
+        if not s[left].isalpha():
+            left += 1
+        elif not s[right].isalpha():
+            right -= 1
+        else:
+            s[left], s[right] = s[right], s[left]
+            left += 1
+            right -= 1
+
+    return "".join(s)
+
+string = input("Enter a string: ")
+result = reverse_only_alphabets(string)
+print("Output:", result)
