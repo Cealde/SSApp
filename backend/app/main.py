@@ -18,6 +18,7 @@ app.include_router(api_authenticator, prefix="/api")
 
 @app.get("/")
 @app.get("/index.html")
+@app.get("/dashboard")
 async def serve_index():
     return FileResponse(FRONTEND_DIR / "pages" / "index.html")
 
@@ -25,6 +26,11 @@ async def serve_index():
 @app.get("/login.html")
 async def serve_login():
     return FileResponse(FRONTEND_DIR / "pages" / "login.html")
+
+@app.get("/loading")
+@app.get("/loading.html")
+async def serve_loading():
+    return FileResponse(FRONTEND_DIR / "pages" / "loading.html")
 
 app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
 app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
