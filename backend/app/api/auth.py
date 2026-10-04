@@ -1,24 +1,23 @@
 from fastapi import APIRouter, Depends
-from backend.app.auth.authentication import AuthRequest, sign_up_user, sign_in_user, get_current_user
+from backend.app.auth.authentication import (
+    SignUpRequest, 
+    LoginRequest, 
+    sign_up_user, 
+    sign_in_user, 
+    get_current_user
+)
 
 auth = APIRouter(tags=["Authentication"])
 
-
 @auth.post("/auth/signup")
-async def signup(data: AuthRequest):
+async def signup(data: SignUpRequest):
     result = await sign_up_user(data)
     return {"message": "User registered successfully!", "data": result}
 
-
 @auth.post("/auth/login")
-async def login(data: AuthRequest):
+async def login(data: LoginRequest):
     result = await sign_in_user(data)
-    return {
-        "access_token": result.get("access_token"),
-        "token_type": "bearer",
-        "user": result.get("user")
-    }
-
+    return result
 
 @auth.get("/dashboard")
 async def dashboard(current_user: dict = Depends(get_current_user)):
