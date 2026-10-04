@@ -18,9 +18,13 @@ app.include_router(api_authenticator, prefix="/api")
 
 @app.get("/")
 @app.get("/index.html")
-@app.get("/dashboard")
 async def serve_index():
     return FileResponse(FRONTEND_DIR / "pages" / "index.html")
+
+@app.get("/dashboard")
+@app.get("/dashboard.html")
+async def serve_dashboard():
+    return FileResponse(FRONTEND_DIR / "pages" / "dashboard.html")
 
 @app.get("/login")
 @app.get("/login.html")

@@ -114,13 +114,19 @@ button {
 .login-panel {
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1.8rem;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.62));
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  padding: 1.8rem 2rem;
+  border: 1px solid rgba(255, 87, 87, 0.12);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at center, rgba(17, 8, 8, 0.92) 20%, rgba(12, 5, 5, 0.6) 65%, transparent 100%),
+    linear-gradient(180deg, rgba(19, 9, 9, 0.88), rgba(10, 4, 4, 0.45));
+  box-shadow:
+    0 0 60px 20px rgba(0, 0, 0, 0.85),
+    inset 0 0 45px 15px rgba(8, 3, 3, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  -webkit-mask-image: radial-gradient(ellipse 92% 90% at 50% 50%, black 50%, rgba(0, 0, 0, 0.75) 72%, rgba(0, 0, 0, 0.3) 88%, transparent 100%);
+  mask-image: radial-gradient(ellipse 92% 90% at 50% 50%, black 50%, rgba(0, 0, 0, 0.75) 72%, rgba(0, 0, 0, 0.3) 88%, transparent 100%);
   transform: translateY(0);
   animation: panelIn 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
