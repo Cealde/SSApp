@@ -1,4 +1,6 @@
 import os
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 import httpx
@@ -11,13 +13,143 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(BASE_DIR / ".env")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://urqhsoiadlwoqbsuiiix.supabase.co").strip("'\"")
-SUPABASE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\"")
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
+    or os.environ.get("SUPABASE_KEY", "")
+    or os.environ.get("SUPABASE_ANON_KEY", "")
+).strip("'\"")
 
-def get_headers():
-    return {
-        "apikey": os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\""),
+def get_supabase_key() -> str:
+    return (
+        os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
+        or os.environ.get("SUPABASE_KEY", "")
+        or os.environ.get("SUPABASE_ANON_KEY", "")
+    ).strip("'\"")
+
+def get_headers() -> dict:
+    key = get_supabase_key()
+    headers = {
+        "apikey": key,
         "Content-Type": "application/json"
     }
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
+
+def get_service_headers() -> Optional[dict]:
+    service_key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        or os.environ.get("SUPABASE_SERVICE_KEY", "")
+    ).strip("'\"")
+    if service_key:
+        return {
+            "apikey": service_key,
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json"
+        }
+    return None
+
+def get_auth_headers_for_write(token: Optional[str] = None) -> dict:
+    service_headers = get_service_headers()
+    if service_headers:
+        return service_headers
+    headers = get_headers()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+_TABLE_COLUMNS_CACHE: dict[str, set[str]] = {}
+
+async def _get_table_columns(client: httpx.AsyncClient, table_name: str, apikey: str) -> Optional[set[str]]:
+    if table_name in _TABLE_COLUMNS_CACHE:
+        return _TABLE_COLUMNS_CACHE[table_name]
+    if not apikey:
+        return None
+    try:
+        resp = await client.get(f"{SUPABASE_URL}/rest/v1/", headers={"apikey": apikey})
+        if resp.status_code == 200:
+            spec = resp.json()
+            defs = spec.get("definitions", {})
+            for name, defn in defs.items():
+                if isinstance(defn, dict) and "properties" in defn:
+                    _TABLE_COLUMNS_CACHE[name] = set(defn["properties"].keys())
+            if table_name in _TABLE_COLUMNS_CACHE:
+                return _TABLE_COLUMNS_CACHE[table_name]
+    except Exception:
+        pass
+    return None
+
+COL_NOT_FOUND_RE = re.compile(
+    r"(?:Could not find the '([^']+)' column|column \"([^\"]+)\" (?:of relation )?does not exist)",
+    re.IGNORECASE
+)
+
+async def _upsert_to_supabase_table(
+    client: httpx.AsyncClient,
+    table_name: str,
+    record: dict,
+    headers: dict
+) -> tuple[bool, str]:
+    """
+    Attempts to insert or upsert a record into a Supabase table.
+    Filters unknown columns using OpenAPI cache or dynamically removes unknown columns on error.
+    Falls back to PATCH if a duplicate row is detected or conflict occurs.
+    """
+    apikey = headers.get("apikey", "")
+    known_cols = await _get_table_columns(client, table_name, apikey)
+
+    if known_cols:
+        current_data = {k: v for k, v in record.items() if v is not None and k in known_cols}
+    else:
+        current_data = {k: v for k, v in record.items() if v is not None}
+
+    url = f"{SUPABASE_URL}/rest/v1/{table_name}"
+    upsert_headers = {
+        **headers,
+        "Prefer": "resolution=merge-duplicates,return=representation"
+    }
+
+    last_error = ""
+
+    # Try inserting / upserting, dropping unaccepted columns if PostgREST complains
+    for _ in range(len(current_data) + 1):
+        if not current_data:
+            break
+        resp = await client.post(url, json=current_data, headers=upsert_headers)
+        if resp.status_code in (200, 201, 204):
+            return True, resp.text
+
+        last_error = f"{resp.status_code}: {resp.text}"
+
+        match = COL_NOT_FOUND_RE.search(resp.text)
+        if match:
+            missing_col = match.group(1) or match.group(2)
+            if missing_col in current_data:
+                del current_data[missing_col]
+                continue
+        break
+
+    # If POST failed (e.g. 409 conflict, or merge-duplicates not supported), fall back to PATCH
+    filter_val = current_data.get("id") or current_data.get("user_id") or current_data.get("email")
+    filter_col = (
+        "id" if current_data.get("id")
+        else ("user_id" if current_data.get("user_id")
+        else ("email" if current_data.get("email") else None))
+    )
+    if filter_col and filter_val:
+        patch_url = f"{url}?{filter_col}=eq.{filter_val}"
+        patch_resp = await client.patch(patch_url, json=current_data, headers=headers)
+        if patch_resp.status_code in (200, 204):
+            return True, patch_resp.text
+        if patch_resp.status_code != 404:
+            last_error += f" | PATCH: {patch_resp.status_code}: {patch_resp.text}"
+
+    # If still not succeeded, try standard POST without resolution=merge-duplicates
+    plain_resp = await client.post(url, json=current_data, headers=headers)
+    if plain_resp.status_code in (200, 201, 204):
+        return True, plain_resp.text
+
+    return False, last_error
 
 security = HTTPBearer(auto_error=False)
 
@@ -50,6 +182,7 @@ AuthRequest = LoginRequest
 # Local dev caches when Supabase is not configured or in dev fallback
 _LOCAL_USERS = {}
 _LOCAL_USER_DETAILS = {}
+_LOCAL_PROFILES = {}
 _LOCAL_ORGS = {
     "demoorg": {
         "name": "DemoOrg",
@@ -67,7 +200,6 @@ _LOCAL_ORGS = {
         "icon": ""
     }
 }
-
 
 async def _verify_organization(org_name: str, org_password: str, key: str) -> dict:
     """
@@ -143,12 +275,81 @@ async def _verify_organization(org_name: str, org_password: str, key: str) -> di
             )
         return org_record
 
+async def _sync_user_supabase_records(
+    user_id: Optional[str],
+    email: str,
+    first_name: str,
+    org_name: str,
+    token: Optional[str] = None
+) -> None:
+    """
+    Syncs user details and profiles to Supabase tables, and updates local caches.
+    """
+    username_val = (first_name.strip().lower().replace(" ", "") if first_name else "") or email.split("@")[0]
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # Keep local caches in sync
+    _LOCAL_USER_DETAILS[email] = {
+        "id": user_id,
+        "user_id": user_id,
+        "email": email,
+        "first_name": first_name,
+        "organization": org_name,
+        "organisation": org_name,
+    }
+    _LOCAL_PROFILES[email] = {
+        "id": user_id,
+        "user_id": user_id,
+        "email": email,
+        "first_name": first_name,
+        "username": username_val,
+        "full_name": first_name,
+        "organization": org_name,
+        "organisation": org_name,
+    }
+
+    key = get_supabase_key()
+    if not key:
+        return
+
+    write_headers = get_auth_headers_for_write(token)
+
+    user_details_record = {
+        "id": user_id,
+        "user_id": user_id,
+        "email": email,
+        "first_name": first_name,
+        "organization": org_name,
+        "organisation": org_name,
+        "updated_at": now_iso
+    }
+
+    profiles_record = {
+        "id": user_id,
+        "user_id": user_id,
+        "email": email,
+        "first_name": first_name,
+        "username": username_val,
+        "full_name": first_name,
+        "organization": org_name,
+        "organisation": org_name,
+        "updated_at": now_iso
+    }
+
+    async with httpx.AsyncClient() as client:
+        ok_ud, err_ud = await _upsert_to_supabase_table(client, "user_details", user_details_record, write_headers)
+        if not ok_ud:
+            print(f"[Supabase Sync] Warning: user_details update: {err_ud}")
+        ok_prof, err_prof = await _upsert_to_supabase_table(client, "profiles", profiles_record, write_headers)
+        if not ok_prof:
+            print(f"[Supabase Sync] Warning: profiles update: {err_prof}")
 
 async def sign_up_user(auth_data: SignUpRequest) -> dict:
     """
-    Validates organization, registers user with Supabase Auth, and saves details to user_details table.
+    Validates organization, registers user with Supabase Auth,
+    and updates both user_details and profiles tables.
     """
-    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\"")
+    key = get_supabase_key()
     email = auth_data.email.strip().lower()
     first_name = (auth_data.first_name or "").strip()
     org_name = (auth_data.organization or "Unincorporated").strip()
@@ -195,34 +396,31 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         signup_result = response.json()
-
-        # Step 3: Add user to user_details table
-        # If signup returns an access_token, use Bearer token; otherwise use publishable key
+        user_obj = signup_result.get("user") or (signup_result if "id" in signup_result else {})
+        user_id = user_obj.get("id") or signup_result.get("id")
         token = signup_result.get("access_token")
-        insert_headers = {
-            **get_headers(),
-            "Prefer": "resolution=merge-duplicates,return=representation"
-        }
-        if token:
-            insert_headers["Authorization"] = f"Bearer {token}"
 
-        user_details_url = f"{SUPABASE_URL}/rest/v1/user_details"
-        user_details_data = {
-            "email": email,
-            "first_name": first_name,
-            "organization": org_name
-        }
-
-        async with httpx.AsyncClient() as client:
-            insert_resp = await client.post(user_details_url, json=user_details_data, headers=insert_headers)
-
-        # Step 4: If signup did not return an access_token, perform immediate sign-in to get active session
+        # Step 3: If signup did not return an access_token, perform immediate sign-in to get active session
         if not token:
             try:
-                direct_login = await sign_in_user(LoginRequest(email=email, password=auth_data.password))
-                return direct_login
-            except Exception:
-                pass
+                login_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
+                async with httpx.AsyncClient() as client:
+                    login_resp = await client.post(
+                        login_url,
+                        json={"email": email, "password": auth_data.password},
+                        headers=get_headers()
+                    )
+                    if login_resp.status_code == 200:
+                        login_data = login_resp.json()
+                        token = login_data.get("access_token")
+                        if not user_id:
+                            user_obj = login_data.get("user") or {}
+                            user_id = user_obj.get("id")
+            except Exception as e:
+                print(f"[Supabase Auth] Direct login attempt: {e}")
+
+        # Step 4: Sync to both user_details and profiles tables
+        await _sync_user_supabase_records(user_id, email, first_name, org_name, token)
 
         # Retrieve organization icon if available
         org_icon = ""
@@ -239,12 +437,11 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             except Exception:
                 pass
 
-        user_obj = signup_result.get("user") or {}
         return {
-            "access_token": token or f"session_{user_obj.get('id', '')}",
+            "access_token": token or f"session_{user_id or 'anon'}",
             "token_type": "bearer",
             "user": {
-                "id": user_obj.get("id"),
+                "id": user_id,
                 "email": email,
                 "first_name": first_name
             },
@@ -259,12 +456,8 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         if email in _LOCAL_USERS:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already registered.")
         _LOCAL_USERS[email] = auth_data.password
-        _LOCAL_USER_DETAILS[email] = {
-            "email": email,
-            "first_name": first_name,
-            "organization": org_name
-        }
         user_id = f"usr_{abs(hash(email)):x}"
+        await _sync_user_supabase_records(user_id, email, first_name, org_name, token=None)
         org_info = _LOCAL_ORGS.get(org_name.lower(), {})
         return {
             "access_token": f"dev_token_{user_id}",
@@ -281,12 +474,12 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             "message": "User registered and logged in successfully."
         }
 
-
 async def sign_in_user(auth_data: LoginRequest) -> dict:
     """
-    Authenticates user, pulls their organization from user_details, and retrieves organization name and icon.
+    Authenticates user, pulls their organization from user_details / profiles,
+    ensures records are synced, and retrieves organization name and icon.
     """
-    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\"")
+    key = get_supabase_key()
     email = auth_data.email.strip().lower()
 
     if key:
@@ -317,8 +510,9 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
         login_result = response.json()
         token = login_result.get("access_token")
         user_info = login_result.get("user", {})
+        user_id = user_info.get("id")
 
-        # Step 2: Pull what organization they are from using user_details table
+        # Step 2: Pull organization and first_name from user_details or profiles
         org_name = ""
         first_name = ""
         auth_headers = {
@@ -327,51 +521,61 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
         }
 
         async with httpx.AsyncClient() as client:
+            # Query user_details
             ud_resp = await client.get(
                 f"{SUPABASE_URL}/rest/v1/user_details?email=eq.{email}&select=*",
                 headers=auth_headers
             )
+            if ud_resp.status_code == 200 and ud_resp.json():
+                ud_data = ud_resp.json()[0]
+                org_name = ud_data.get("organization") or ud_data.get("organisation") or ""
+                first_name = ud_data.get("first_name") or ""
 
-        if ud_resp.status_code == 200 and ud_resp.json():
-            ud_data = ud_resp.json()[0]
-            org_name = ud_data.get("organization") or ""
-            first_name = ud_data.get("first_name") or ""
-        else:
-            # Fallback to user_metadata stored during signup
-            user_meta = user_info.get("user_metadata", {})
-            org_name = user_meta.get("organization") or ""
-            first_name = user_meta.get("first_name") or ""
-
-            # If user_details entry was missing, upsert it now using the authenticated token
-            if org_name:
-                try:
-                    async with httpx.AsyncClient() as client:
-                        await client.post(
-                            f"{SUPABASE_URL}/rest/v1/user_details",
-                            json={"email": email, "first_name": first_name, "organization": org_name},
-                            headers={**auth_headers, "Prefer": "resolution=merge-duplicates"}
-                        )
-                except Exception:
-                    pass
-
-        # Step 3: Retrieve organization icon from the organization table
-        org_icon = ""
-        if org_name:
-            async with httpx.AsyncClient() as client:
-                org_resp = await client.get(
-                    f"{SUPABASE_URL}/rest/v1/organization?name=eq.{org_name}&select=name,icon",
-                    headers=get_headers()
+            # Query profiles if not found yet
+            if not org_name or not first_name:
+                prof_resp = await client.get(
+                    f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{user_id}&select=*",
+                    headers=auth_headers
                 )
-            if org_resp.status_code == 200 and org_resp.json():
-                org_info = org_resp.json()[0]
-                org_icon = org_info.get("icon") or ""
-                org_name = org_info.get("name") or org_name
+                if prof_resp.status_code == 200 and prof_resp.json():
+                    prof_data = prof_resp.json()[0]
+                    if not org_name:
+                        org_name = prof_data.get("organization") or prof_data.get("organisation") or ""
+                    if not first_name:
+                        first_name = prof_data.get("first_name") or prof_data.get("full_name") or ""
+
+        # Fallback to user_metadata stored during signup
+        if not org_name or not first_name:
+            user_meta = user_info.get("user_metadata", {})
+            if not org_name:
+                org_name = user_meta.get("organization") or user_meta.get("organisation") or ""
+            if not first_name:
+                first_name = user_meta.get("first_name") or ""
+
+        # Step 3: Ensure both user_details and profiles are synced in Supabase
+        await _sync_user_supabase_records(user_id, email, first_name, org_name, token)
+
+        # Step 4: Retrieve organization icon from the organization table
+        org_icon = ""
+        if org_name and org_name.lower() != "unincorporated":
+            try:
+                async with httpx.AsyncClient() as client:
+                    org_resp = await client.get(
+                        f"{SUPABASE_URL}/rest/v1/organization?name=eq.{org_name}&select=name,icon",
+                        headers=get_headers()
+                    )
+                if org_resp.status_code == 200 and org_resp.json():
+                    org_info = org_resp.json()[0]
+                    org_icon = org_info.get("icon") or ""
+                    org_name = org_info.get("name") or org_name
+            except Exception:
+                pass
 
         return {
             "access_token": token,
             "token_type": "bearer",
             "user": {
-                "id": user_info.get("id"),
+                "id": user_id,
                 "email": email,
                 "first_name": first_name
             },
@@ -389,9 +593,11 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
         user_details = _LOCAL_USER_DETAILS.get(email, {})
         org_name = user_details.get("organization", "DemoOrg")
         first_name = user_details.get("first_name", "User")
-        org_info = _LOCAL_ORGS.get(org_name, {})
+        org_info = _LOCAL_ORGS.get(org_name.lower(), {})
 
-        user_id = f"usr_{abs(hash(email)):x}"
+        user_id = user_details.get("id") or f"usr_{abs(hash(email)):x}"
+        await _sync_user_supabase_records(user_id, email, first_name, org_name, token=None)
+
         return {
             "access_token": f"dev_token_{user_id}",
             "token_type": "bearer",
@@ -406,7 +612,6 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
             }
         }
 
-
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     if not credentials:
         raise HTTPException(
@@ -415,9 +620,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip("'\"")
+    key = get_supabase_key()
     token = credentials.credentials
-    if key and not token.startswith("dev_token_"):
+    if key and not token.startswith("dev_token_") and not token.startswith("session_"):
         url = f"{SUPABASE_URL}/auth/v1/user"
         auth_headers = {
             **get_headers(),
@@ -436,7 +641,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             
         return response.json()
     else:
+        user_id = token.replace("dev_token_", "").replace("session_", "")
         return {
-            "id": token.replace("dev_token_", ""),
+            "id": user_id,
             "email": "user@sathyasethu.com"
         }
