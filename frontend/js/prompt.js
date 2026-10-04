@@ -359,6 +359,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fileInput) fileInput.value = '';
             
             return; // Halt here until they choose
+          } else if (typeof aiResult === 'string' && (aiResult.includes('```mermaid') || aiResult.trim().startsWith('graph ') || aiResult.trim().startsWith('flowchart '))) {
+            const cleanCode = aiResult.replace(/```mermaid/g, '').replace(/```/g, '').trim();
+            htmlToDisplay = `<!DOCTYPE html><html><head><meta charset="utf-8">
+              <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+              <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                  try { mermaid.initialize({ startOnLoad: true, theme: "dark" }); } catch(e){}
+                });
+              </script>
+              <style>
+                body { margin: 0; background: #110e08; color: #fbf7ee; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; padding: 20px; box-sizing: border-box; }
+                .mermaid { width: 100%; text-align: center; }
+              </style>
+            </head><body>
+              <div class="mermaid">
+                ${cleanCode}
+              </div>
+            </body></html>`;
           } else if (typeof aiResult === 'string' && (aiResult.includes('<html') || aiResult.includes('<!DOCTYPE') || aiResult.includes('</'))) {
             htmlToDisplay = aiResult;
           } else {

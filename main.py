@@ -235,7 +235,7 @@ def download(oid:str):
 def preview(oid:str):
     o=get(oid,'output')
     return HTMLResponse(webpage(o['output'],o['request']),headers={
-        'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox"})
+        'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; sandbox allow-scripts"})
 
 @app.get('/api/sessions/{sid}/subtitles/{index}')
 def subtitles(sid:str,index:int):

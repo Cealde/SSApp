@@ -54,6 +54,11 @@ def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = 
                 "For 'presentation', output a structured markdown representation of slides. "
                 "Include a title slide with the organization details. Suggest Unsplash stock images for visual appeal."
             )
+        if "mermaid" in formats or "infographic" in formats:
+            instructions.append(
+                "For 'mermaid' or 'infographic', output valid top-down Mermaid flowchart code inside a ```mermaid markdown block. "
+                "Ensure it uses alphabetic node IDs and quoted text labels."
+            )
         if "pdf" in formats or "advisory" in formats:
             instructions.append(
                 "For documents, structure them professionally in Markdown. Include headers for the organization if specified."
