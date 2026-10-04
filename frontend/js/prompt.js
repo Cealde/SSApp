@@ -626,10 +626,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <iframe class="preview-iframe" title="Rendered Output Preview" srcdoc="${escapeHtml(loadingHtml)}"></iframe>
       <div class="message-actions-bar" style="position: absolute; bottom: 12px; right: 12px; z-index: 10; display: flex; gap: 8px;">
         <button type="button" class="dashboard-btn download-pptx-btn" style="display: none; background: #e2a221; color: #000; font-weight: 600;">
-          📊 Download PowerPoint (.pptx)
+          Download PowerPoint (.pptx)
         </button>
         <button type="button" class="dashboard-btn download-result-btn" style="display: none;">
-          📦 Download ZIP
+          Download ZIP
         </button>
       </div>
     `;
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
               alert('Could not download PPTX: ' + err.message);
             } finally {
               downloadPptxBtn.disabled = false;
-              downloadPptxBtn.textContent = '📊 Download PowerPoint (.pptx)';
+              downloadPptxBtn.textContent = 'Download PowerPoint (.pptx)';
             }
           }
         };

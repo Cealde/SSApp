@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap");
 
 :root {
+  color-scheme: dark;
   --bg-0: #0a0907;
   --bg-1: #14110b;
   --bg-2: #1b160e;
@@ -548,21 +549,46 @@ html, body {
   margin-top: 4px;
 }
 
-.config-group select, .config-group input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(226, 162, 33, 0.22);
+.config-group select, 
+.config-group input,
+.config-subgroup select {
+  color-scheme: dark;
+  background: rgba(20, 16, 11, 0.95);
+  border: 1px solid rgba(226, 162, 33, 0.25);
   border-radius: 8px;
   padding: 8px 10px;
-  color: var(--text);
+  color: #fbf7ee;
   font-family: var(--font-body);
   font-size: 0.86rem;
   outline: none;
   transition: border 0.2s ease, background 0.2s ease;
 }
 
-.config-group select:focus, .config-group input:focus {
+.config-group select:focus, 
+.config-group input:focus,
+.config-subgroup select:focus {
   border-color: var(--accent);
-  background: rgba(226, 162, 33, 0.06);
+  background: rgba(30, 24, 16, 0.98);
+}
+
+/* Force dark background and visible text on all select options */
+select,
+select option,
+option {
+  color-scheme: dark;
+  background-color: #14110b !important;
+  color: #fbf7ee !important;
+}
+
+option:checked {
+  background-color: #e2a221 !important;
+  color: #0a0907 !important;
+}
+
+option:hover,
+option:focus {
+  background-color: #261e12 !important;
+  color: #f5b73d !important;
 }
 
 /* Format Toggle Grid */
@@ -578,8 +604,8 @@ html, body {
 .format-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 9px 12px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1.5px solid rgba(226, 162, 33, 0.15);
@@ -629,11 +655,6 @@ html, body {
   color: #0a0907;
 }
 
-.format-chip .chip-icon {
-  font-size: 1.05rem;
-  flex-shrink: 0;
-}
-
 .format-chip .chip-label {
   flex: 1;
 }
@@ -663,16 +684,6 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-.config-subgroup select {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(226, 162, 33, 0.2);
-  border-radius: 6px;
-  padding: 6px 8px;
-  color: var(--text);
-  font-size: 0.82rem;
-  font-family: var(--font-body);
-}
-
 .pres-badge-info {
   font-size: 0.78rem;
   color: var(--accent);
@@ -684,12 +695,6 @@ html, body {
   align-items: center;
   gap: 6px;
   font-weight: 500;
-}
-
-.config-group select option {
-  background: var(--bg-1);
-  color: var(--text);
-  padding: 5px 6px;
 }
 
 .submit-prompt-btn {
