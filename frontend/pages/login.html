@@ -8,6 +8,12 @@
       name="description"
       content="Secure sign in and sign up for SathyaSethu."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/css/login.css" />
   </head>
   <body class="auth-page">
@@ -19,20 +25,9 @@
       <h1 id="auth-title" class="auth-top-brand">SathyaSethu</h1>
 
       <section class="login-panel" aria-label="SathyaSethu authentication panel">
-        <div class="brand-row">
-          <div class="brand-mark" aria-hidden="true">S</div>
-          <div class="brand-copy">
-            <span class="brand-name">SathyaSethu</span>
-            <span class="brand-tag">workspace</span>
-          </div>
-        </div>
 
         <div class="welcome-copy" id="welcomeCopy">
-          <p class="eyebrow">Welcome</p>
-          <h2 id="authHeading">Log in to your workspace</h2>
-          <p id="authSubtext">
-            Access your files, ideas, and workflows in one focused environment.
-          </p>
+          <h2 id="authHeading">Login</h2>
         </div>
 
         <form id="loginForm" class="auth-form" novalidate>
@@ -43,7 +38,7 @@
               name="loginEmail"
               type="email"
               autocomplete="email"
-              placeholder="name@sathyasethu.com"
+              placeholder="Email"
               aria-describedby="loginEmailError"
               required
             />
@@ -91,13 +86,27 @@
 
         <form id="signupForm" class="auth-form hidden" novalidate>
           <div class="field-group">
+            <label for="signupFirstName">First Name</label>
+            <input
+              id="signupFirstName"
+              name="signupFirstName"
+              type="text"
+              autocomplete="given-name"
+              placeholder="First Name"
+              aria-describedby="signupFirstNameError"
+              required
+            />
+            <small id="signupFirstNameError" class="field-error" aria-live="polite"></small>
+          </div>
+
+          <div class="field-group">
             <label for="signupEmail">Email</label>
             <input
               id="signupEmail"
               name="signupEmail"
               type="email"
               autocomplete="email"
-              placeholder="name@sathyasethu.com"
+              placeholder="Email"
               aria-describedby="signupEmailError"
               required
             />
@@ -129,41 +138,41 @@
           </div>
 
           <div class="field-group">
-            <label for="organization">Organization</label>
+            <label for="signupOrganization">Organization Name</label>
             <input
-              id="organization"
-              name="organization"
+              id="signupOrganization"
+              name="signupOrganization"
               type="text"
               autocomplete="organization"
-              placeholder="Your organization"
-              aria-describedby="organizationError"
+              placeholder="Organization Name"
+              aria-describedby="signupOrganizationError"
               required
             />
-            <small id="organizationError" class="field-error" aria-live="polite"></small>
+            <small id="signupOrganizationError" class="field-error" aria-live="polite"></small>
           </div>
 
           <div class="field-group">
-            <label for="organizationPassword">Organization Password</label>
+            <label for="signupOrganizationPassword">Organization Password</label>
             <div class="password-wrap">
               <input
-                id="organizationPassword"
-                name="organizationPassword"
+                id="signupOrganizationPassword"
+                name="signupOrganizationPassword"
                 type="password"
                 autocomplete="off"
-                placeholder="Enter organization password"
-                aria-describedby="organizationPasswordError"
+                placeholder="Organization Password"
+                aria-describedby="signupOrganizationPasswordError"
                 required
               />
               <button
                 type="button"
                 class="password-toggle"
-                aria-label="Show password"
-                data-password-toggle="organizationPassword"
+                aria-label="Show organization password"
+                data-password-toggle="signupOrganizationPassword"
               >
                 Show
               </button>
             </div>
-            <small id="organizationPasswordError" class="field-error" aria-live="polite"></small>
+            <small id="signupOrganizationPasswordError" class="field-error" aria-live="polite"></small>
           </div>
 
           <button type="submit" class="primary-button" id="signUpButton">
@@ -184,11 +193,8 @@
             Please click the link in the email to confirm your account and continue.
           </p>
           <div class="confirmation-actions">
-            <button type="button" class="primary-button confirmation-button" id="openEmailButton">
-              <span class="button-label">Open Email</span>
-            </button>
-            <button type="button" class="secondary-button small-button" id="goToLoginButton">
-              Go to Login
+            <button type="button" class="primary-button confirmation-button" id="goToLoginButton">
+              <span class="button-label">Go to Login</span>
             </button>
           </div>
           <div class="resend-row">

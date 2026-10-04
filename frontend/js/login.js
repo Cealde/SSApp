@@ -59,16 +59,23 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.classList.toggle('hidden', isLogin);
     confirmationState.classList.toggle('hidden', true);
 
-    authHeading.textContent = isLogin ? 'Log in to your workspace' : 'Create your account';
-    authSubtext.textContent = isLogin
-      ? 'Access your files, ideas, and workflows in one focused environment.'
-      : 'Set up your workspace and start collaborating with confidence.';
-    footerPrompt.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
-    toggleModeButton.textContent = isLogin ? 'Sign Up' : 'Log In';
+    authHeading.textContent = isLogin ? 'Login' : 'Create an Account';
+    if (authSubtext) {
+      authSubtext.textContent = '';
+    }
+    footerPrompt.textContent = isLogin ? "Don't have an account?" : 'Have an account?';
+    toggleModeButton.textContent = isLogin ? 'Sign Up' : 'Login';
 
     clearStatus(loginStatus);
     clearStatus(signupStatus);
     clearStatus(confirmationStatus);
+    clearFieldError('loginEmail');
+    clearFieldError('loginPassword');
+    clearFieldError('signupFirstName');
+    clearFieldError('signupEmail');
+    clearFieldError('signupPassword');
+    clearFieldError('signupOrganization');
+    clearFieldError('signupOrganizationPassword');
 
     if (isLogin) {
       window.location.hash = 'login';
@@ -84,9 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     signupForm.classList.add('hidden');
     confirmationState.classList.remove('hidden');
     authHeading.textContent = 'Check your email';
-    authSubtext.textContent = 'We’ve sent a confirmation link to your inbox.';
-    footerPrompt.textContent = 'Need another step?';
-    toggleModeButton.textContent = 'Go to Login';
+    if (authSubtext) {
+      authSubtext.textContent = 'Account registered! You can now log in to your workspace.';
+    }
+    footerPrompt.textContent = 'Ready to continue?';
+    toggleModeButton.textContent = 'Login';
     clearStatus(confirmationStatus);
     window.location.hash = 'confirm';
   };
@@ -123,15 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   };
 
-  const validateOrganization = (value, fieldId) => {
-    if (!value.trim()) {
-      showError(fieldId, 'Organization is required.');
-      return false;
-    }
-    clearFieldError(fieldId);
-    return true;
-  };
-
   passwordToggles.forEach((toggle) => {
     toggle.addEventListener('click', () => {
       const targetId = toggle.dataset.passwordToggle;
@@ -146,14 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  loginForm.addEventListener('submit', (event) => {
+  loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearStatus(loginStatus);
     clearFieldError('loginEmail');
     clearFieldError('loginPassword');
 
-    const emailValid = validateEmail(document.getElementById('loginEmail').value, 'loginEmail', 'Email');
-    const passwordValid = validatePassword(document.getElementById('loginPassword').value, 'loginPassword', 'Password', 6);
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    const emailValid = validateEmail(email, 'loginEmail', 'Email');
+    const passwordValid = validatePassword(password, 'loginPassword', 'Password', 6);
 
     if (!emailValid || !passwordValid) {
       setStatus(loginStatus, 'Please correct the highlighted fields.', 'error');
@@ -162,54 +165,129 @@ document.addEventListener('DOMContentLoaded', () => {
 
     signInButton.disabled = true;
     signInButton.classList.add('is-loading');
-    signInButton.querySelector('.button-label').textContent = 'Logging In';
+    signInButton.querySelector('.button-label').textContent = 'Logging In...';
 
-    const email = document.getElementById('loginEmail').value.trim();
-    const username = email.split('@')[0] || 'SathyaSethu User';
-    const authPayload = {
-      email,
-      username,
-      remember: rememberInput.checked,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (rememberInput.checked) {
-      localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
-    } else {
-      sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || 'Invalid credentials or login failed.');
+      }
+
+      const username = (data.user?.email || email).split('@')[0] || 'User';
+      const authPayload = {
+        token: data.access_token,
+        email,
+        username,
+        user: data.user,
+        remember: rememberInput.checked,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (rememberInput.checked) {
+        localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      } else {
+        sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      }
+
+      setStatus(loginStatus, 'Preparing your secure workspace...', 'success');
+
+      window.setTimeout(() => {
+        window.location.href = '/loading';
+      }, 350);
+    } catch (error) {
+      setStatus(loginStatus, error.message || 'Login failed.', 'error');
+      signInButton.disabled = false;
+      signInButton.classList.remove('is-loading');
+      signInButton.querySelector('.button-label').textContent = 'Log In';
     }
-
-    setStatus(loginStatus, 'Preparing your secure workspace...', 'success');
-
-    window.setTimeout(() => {
-      window.location.href = '/loading';
-    }, 350);
   });
 
-  signupForm.addEventListener('submit', (event) => {
+  signupForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearStatus(signupStatus);
+    clearFieldError('signupFirstName');
     clearFieldError('signupEmail');
     clearFieldError('signupPassword');
-    clearFieldError('organization');
-    clearFieldError('organizationPassword');
+    clearFieldError('signupOrganization');
+    clearFieldError('signupOrganizationPassword');
 
-    const emailValid = validateEmail(document.getElementById('signupEmail').value, 'signupEmail', 'Email');
-    const passwordValid = validatePassword(document.getElementById('signupPassword').value, 'signupPassword', 'Password', 8);
-    const orgValid = validateOrganization(document.getElementById('organization').value, 'organization');
-    const orgPasswordValid = validatePassword(document.getElementById('organizationPassword').value, 'organizationPassword', 'Organization Password', 6);
+    const firstName = document.getElementById('signupFirstName')?.value.trim() || '';
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    const organization = document.getElementById('signupOrganization')?.value.trim() || '';
+    const organizationPassword = document.getElementById('signupOrganizationPassword')?.value || '';
 
-    if (!emailValid || !passwordValid || !orgValid || !orgPasswordValid) {
+    let formValid = true;
+
+    if (!firstName) {
+      showError('signupFirstName', 'First Name is required.');
+      formValid = false;
+    } else {
+      clearFieldError('signupFirstName');
+    }
+
+    if (!validateEmail(email, 'signupEmail', 'Email')) {
+      formValid = false;
+    }
+
+    if (!validatePassword(password, 'signupPassword', 'Password', 6)) {
+      formValid = false;
+    }
+
+    if (!organization) {
+      showError('signupOrganization', 'Organization Name is required.');
+      formValid = false;
+    } else {
+      clearFieldError('signupOrganization');
+    }
+
+    if (!organizationPassword) {
+      showError('signupOrganizationPassword', 'Organization Password is required.');
+      formValid = false;
+    } else {
+      clearFieldError('signupOrganizationPassword');
+    }
+
+    if (!formValid) {
       setStatus(signupStatus, 'Please complete all required fields.', 'error');
       return;
     }
 
     signUpButton.disabled = true;
     signUpButton.classList.add('is-loading');
-    signUpButton.querySelector('.button-label').textContent = 'Creating Account';
+    signUpButton.querySelector('.button-label').textContent = 'Creating Account...';
 
-    const email = document.getElementById('signupEmail').value.trim();
-    setConfirmationState(email);
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || 'Registration failed.');
+      }
+
+      setConfirmationState(email);
+    } catch (error) {
+      setStatus(signupStatus, error.message || 'Registration failed.', 'error');
+      signUpButton.disabled = false;
+      signUpButton.classList.remove('is-loading');
+      signUpButton.querySelector('.button-label').textContent = 'Sign Up';
+    }
   });
 
   resendEmailButton.addEventListener('click', () => {
@@ -217,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resendEmailButton.disabled = true;
     resendEmailButton.classList.add('is-loading');
     resendEmailButton.textContent = 'Resending...';
-    setStatus(confirmationStatus, `A new confirmation email has been sent to ${email}.`, 'success');
+    setStatus(confirmationStatus, `A confirmation notification has been sent to ${email}.`, 'success');
 
     window.setTimeout(() => {
       resendEmailButton.disabled = false;
@@ -226,10 +304,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1200);
   });
 
-  openEmailButton.addEventListener('click', () => {
-    const email = signupEmailValue || 'your@email.com';
-    window.location.href = `mailto:${email}`;
-  });
+  if (openEmailButton) {
+    openEmailButton.addEventListener('click', () => {
+      const email = signupEmailValue || 'your@email.com';
+      window.location.href = `mailto:${email}`;
+    });
+  }
 
   goToLoginButton.addEventListener('click', () => {
     setMode('login');
@@ -241,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', (event) => {
     const active = document.activeElement;
-    if (event.key === 'Enter' && active && (active.id === 'loginPassword' || active.id === 'signupPassword' || active.id === 'organizationPassword')) {
+    if (event.key === 'Enter' && active && (active.id === 'loginPassword' || active.id === 'signupPassword')) {
       const activeForm = active.closest('form');
       if (activeForm) {
         activeForm.requestSubmit();
@@ -251,4 +331,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setMode(currentMode);
 });
-

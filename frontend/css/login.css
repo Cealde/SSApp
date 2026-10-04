@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap");
+
 :root {
   --bg-0: #090909;
   --bg-1: #140707;
@@ -13,9 +15,11 @@
   --accent-alt: #ff5a5f;
   --accent-soft: rgba(212, 16, 26, 0.2);
   --danger: #ff6b6b;
-  --success: #f87171;
-  --shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
-  --button-shadow: 0 18px 30px rgba(212, 16, 26, 0.28);
+  --success: #4ade80;
+  --shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+  --button-shadow: 0 12px 24px rgba(212, 16, 26, 0.28);
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-title: "Momo Trust Display", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -24,6 +28,7 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -34,10 +39,13 @@ body {
     radial-gradient(circle at bottom right, rgba(255, 90, 95, 0.18), transparent 24%),
     linear-gradient(135deg, var(--bg-0), var(--bg-1) 38%, var(--bg-2));
   color: var(--text);
-  font-family: Inter, "SF Pro Display", "Segoe UI", sans-serif;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  font-family: var(--font-body);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.25rem 1rem;
 }
 
 button,
@@ -54,86 +62,89 @@ button {
   position: fixed;
   border-radius: 50%;
   filter: blur(60px);
-  opacity: 0.7;
+  opacity: 0.6;
   pointer-events: none;
   animation: float 16s ease-in-out infinite alternate;
 }
 
 .ambient-one {
-  width: 420px;
-  height: 420px;
+  width: 380px;
+  height: 380px;
   background: rgba(212, 16, 26, 0.23);
-  top: 8%;
-  left: 8%;
+  top: 5%;
+  left: 5%;
 }
 
 .ambient-two {
-  width: 520px;
-  height: 520px;
+  width: 440px;
+  height: 440px;
   background: rgba(255, 90, 95, 0.18);
-  right: 10%;
-  bottom: 8%;
+  right: 5%;
+  bottom: 5%;
   animation-delay: 1.2s;
 }
 
 .ambient-three {
-  width: 300px;
-  height: 300px;
+  width: 260px;
+  height: 260px;
   background: rgba(255, 50, 50, 0.12);
   left: 40%;
-  bottom: 22%;
+  bottom: 20%;
   animation-delay: 2.4s;
 }
 
 .auth-shell {
   position: relative;
-  width: min(100%, 1120px);
-  padding: 40px 24px;
+  width: min(100%, 430px);
+  padding: 0.5rem 0;
+  margin: auto;
   z-index: 1;
 }
 
 .auth-top-brand {
-  margin: 0 0 1.5rem;
+  margin: 0 0 0.85rem;
   text-align: center;
-  font-size: clamp(2.2rem, 5vw, 3.2rem);
-  letter-spacing: -0.06em;
+  font-family: var(--font-title);
+  font-size: 2.1rem;
+  letter-spacing: -0.02em;
   color: var(--text);
   font-weight: 700;
 }
 
 .login-panel {
-  width: min(100%, 460px);
+  width: 100%;
   margin: 0 auto;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
+  padding: 1.5rem 1.8rem;
   border: 1px solid var(--line);
-  border-radius: 32px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.56));
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.62));
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   transform: translateY(0);
-  animation: panelIn 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: panelIn 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .brand-row {
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.45rem 0.85rem 0.45rem 0.45rem;
+  gap: 0.65rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.35rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: white;
   font-weight: 700;
+  font-size: 0.85rem;
   box-shadow: var(--button-shadow);
 }
 
@@ -144,48 +155,45 @@ button {
 }
 
 .brand-name {
-  font-size: 0.96rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .brand-tag {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .welcome-copy {
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  text-align: center;
 }
 
-.eyebrow {
-  margin: 0 0 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent-alt);
-}
-
-.welcome-copy h1 {
+.welcome-copy h2 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 2.7rem);
-  line-height: 1.08;
-  letter-spacing: -0.06em;
+  font-family: var(--font-title);
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-align: center;
 }
 
 .welcome-copy p:last-child {
-  margin: 0.85rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--muted);
-  line-height: 1.65;
+  font-size: 0.86rem;
+  line-height: 1.45;
 }
 
 #loginForm,
 #signupForm {
-  margin-top: 1.8rem;
+  margin-top: 1rem;
 }
 
 .auth-form.hidden,
@@ -195,14 +203,14 @@ button {
 }
 
 .field-group {
-  margin-bottom: 1.1rem;
+  margin-bottom: 0.75rem;
 }
 
 label {
   display: inline-block;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.3rem;
   color: var(--muted-strong);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-weight: 600;
 }
 
@@ -210,22 +218,24 @@ input[type="text"],
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 87, 87, 0.28);
+  background: transparent;
   color: var(--text);
-  padding: 0.98rem 1rem;
-  border-radius: 16px;
+  padding: 0.68rem 0.88rem;
+  border-radius: 12px;
   outline: none;
-  transition: border-color 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+  font-size: 0.9rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 input::placeholder {
-  color: rgba(191, 219, 254, 0.52);
+  color: rgba(230, 176, 176, 0.5);
 }
 
 input:focus {
-  border-color: rgba(212, 16, 26, 0.82);
-  box-shadow: 0 0 0 4px rgba(212, 16, 26, 0.12);
+  border-color: rgba(212, 16, 26, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 16, 26, 0.2);
+  background: transparent;
 }
 
 .password-wrap {
@@ -239,13 +249,18 @@ input:focus {
 .password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.6rem;
+  right: 0.45rem;
   transform: translateY(-50%);
   border: 0;
-  border-radius: 10px;
-  padding: 0.4rem 0.7rem;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 0.28rem 0.55rem;
+  background: rgba(255, 255, 255, 0.06);
   color: var(--muted-strong);
+  font-size: 0.75rem;
+}
+
+.password-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .meta-row {
@@ -253,16 +268,18 @@ input:focus {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: 0.2rem 0 1.2rem;
+  margin: 0.1rem 0 0.85rem;
+  font-size: 0.84rem;
 }
 
 .remember-me {
   margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
+  cursor: pointer;
 }
 
 .remember-me input {
@@ -272,6 +289,7 @@ input:focus {
 .text-link {
   color: var(--muted-strong);
   text-decoration: none;
+  font-size: 0.84rem;
   transition: opacity 150ms ease;
 }
 
@@ -283,11 +301,12 @@ input:focus {
 .primary-button {
   width: 100%;
   border: 0;
-  border-radius: 18px;
-  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: white;
   font-weight: 700;
+  font-size: 0.95rem;
   box-shadow: var(--button-shadow);
   transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
 }
@@ -295,7 +314,7 @@ input:focus {
 .primary-button:hover,
 .primary-button:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 20px 38px rgba(212, 16, 26, 0.35);
+  box-shadow: 0 16px 30px rgba(212, 16, 26, 0.35);
 }
 
 .primary-button:active {
@@ -310,9 +329,9 @@ input:focus {
 .primary-button.is-loading .button-label::after {
   content: "";
   display: inline-block;
-  width: 0.8rem;
-  height: 0.8rem;
-  margin-left: 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-left: 0.65rem;
   border: 2px solid rgba(255, 255, 255, 0.7);
   border-top-color: transparent;
   border-radius: 50%;
@@ -322,17 +341,18 @@ input:focus {
 
 .field-error {
   display: block;
-  min-height: 1.1rem;
-  margin-top: 0.42rem;
+  min-height: 0.9rem;
+  margin-top: 0.25rem;
   color: var(--danger);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .form-status {
-  min-height: 1.1rem;
-  margin: 1rem 0 0;
+  min-height: 0.9rem;
+  margin: 0.6rem 0 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .form-status.error {
@@ -347,10 +367,10 @@ input:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.15rem;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.85rem;
 }
 
 .toggle-link {
@@ -359,36 +379,39 @@ input:focus {
   color: var(--muted-strong);
   font-weight: 700;
   padding: 0;
+  cursor: pointer;
 }
 
 .auth-confirmation {
-  margin-top: 1.6rem;
+  margin-top: 1.2rem;
   text-align: center;
 }
 
 .mail-icon {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 1rem;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 0.8rem;
   display: grid;
   place-items: center;
-  border-radius: 24px;
+  border-radius: 18px;
   background: linear-gradient(135deg, rgba(212, 16, 26, 0.18), rgba(255, 90, 95, 0.14));
   border: 1px solid var(--line);
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: var(--text);
   box-shadow: var(--shadow);
 }
 
 .auth-confirmation h3 {
   margin: 0;
-  font-size: clamp(1.7rem, 4vw, 2.2rem);
-  letter-spacing: -0.05em;
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
 }
 
 .auth-confirmation p {
   color: var(--muted);
-  line-height: 1.6;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0.4rem 0 0;
 }
 
 .auth-confirmation strong {
@@ -398,47 +421,45 @@ input:focus {
 .confirmation-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  margin-top: 1rem;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
 }
 
 .secondary-button {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 0.95rem 1.1rem;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 180ms ease, border-color 180ms ease;
 }
 
-.resend-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  color: var(--muted);
+.secondary-button:hover,
+.secondary-button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .text-button {
-  background: transparent;
   border: 0;
-  padding: 0;
-  color: var(--muted-strong);
-  font-weight: 700;
-  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0.35rem;
 }
 
-.text-button.is-loading {
-  opacity: 0.7;
+.text-button:hover,
+.text-button:focus-visible {
+  color: var(--text);
 }
 
 @keyframes panelIn {
   from {
     opacity: 0;
-    transform: translateY(18px) scale(0.98);
+    transform: translateY(16px) scale(0.985);
   }
   to {
     opacity: 1;
@@ -447,11 +468,11 @@ input:focus {
 }
 
 @keyframes float {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
+  from {
+    transform: translateY(0px) scale(1);
   }
-  100% {
-    transform: translate3d(30px, -26px, 0) scale(1.08);
+  to {
+    transform: translateY(-24px) scale(1.04);
   }
 }
 
@@ -461,27 +482,13 @@ input:focus {
   }
 }
 
-@media (max-width: 640px) {
-  .auth-shell {
-    padding: 24px 16px;
+@media (max-width: 480px) {
+  body {
+    padding: 1rem 0.75rem;
   }
 
   .login-panel {
-    border-radius: 26px;
-    padding: 1.2rem 1rem 1.4rem;
-  }
-
-  .meta-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    padding: 1.25rem 1.25rem;
+    border-radius: 18px;
   }
 }
