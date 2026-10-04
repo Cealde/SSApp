@@ -9,8 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const userMessageRow = document.getElementById('userMessageRow');
   const userMessageText = document.getElementById('userMessageText');
   const submitBtn = document.getElementById('submitBtn');
+  const stopBtn = document.getElementById('stopBtn');
   const brandIconImg = document.getElementById('brandIconImg');
   
+  // AbortController for stopping AI generation
+  let activeAbortController = null;
+  let activeChatId = null;
+
   // New UI Elements
   const configToggleBtn = document.getElementById('configToggleBtn');
   const configPanel = document.getElementById('configPanel');
@@ -128,13 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
     iframeWrapper.className = 'iframe-wrapper glow-fade-in';
     iframeWrapper.style.display = 'block';
     
-    const loadingHtml = `<!DOCTYPE html><html><body style="background:#110e08;color:#e2a221;font-family:sans-serif;padding:32px;display:flex;align-items:center;gap:12px;">
+    const loadingHtml = `<!DOCTYPE html><html><head>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap" rel="stylesheet">
+    </head><body style="background:#110e08;color:#e2a221;font-family:'DM Sans',sans-serif;padding:32px;display:flex;align-items:center;gap:14px;box-sizing:border-box;">
       <style>
         .spinner { width:22px; height:22px; border:3px solid rgba(226,162,33,0.3); border-top-color:#e2a221; border-radius:50%; animation:spin 0.8s linear infinite; }
         @keyframes spin { to { transform:rotate(360deg); } }
       </style>
       <div class="spinner"></div>
-      <span style="font-size:15px;letter-spacing:0.02em;">Generating output with AI... Please wait...</span>
+      <span style="font-size:15px;letter-spacing:0.02em;color:#fbf7ee;">Generating output with AI... Please wait...</span>
     </body></html>`;
     
     iframeWrapper.innerHTML = `
@@ -345,6 +354,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fileInput) fileInput.value = '';
 
       submitBtn.disabled = true;
+      submitBtn.style.display = 'none';
+      if (stopBtn) stopBtn.style.display = 'flex';
+
+      activeAbortController = new AbortController();
+      activeChatId = chatId;
 
       try {
         // Collect Configuration Parameters
@@ -373,12 +387,14 @@ document.addEventListener('DOMContentLoaded', () => {
           res = await fetch('/api/give-files', {
             method: 'POST',
             body: formData,
+            signal: activeAbortController.signal,
           });
         } else {
           res = await fetch('/api/give', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, config: configData }),
+            signal: activeAbortController.signal,
           });
         }
 
@@ -523,9 +539,40 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAttachedFiles();
         if (fileInput) fileInput.value = '';
       } catch (err) {
-        displayAiResponse(`<!DOCTYPE html><html><body style="background:#110e08;color:#e2a221;padding:20px;">Error: ${err.message || 'Failed to process request'}</body></html>`);
+        if (err.name === 'AbortError') {
+          return;
+        }
+        displayAiResponse(`<!DOCTYPE html><html><head>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap">
+        </head><body style="background:#110e08;color:#ff6b6b;font-family:'DM Sans',sans-serif;padding:24px;">
+          <p style="font-size:15px;">⚠️ Error: ${escapeHtml(err.message || 'Failed to process request')}</p>
+        </body></html>`, promptText, chatId);
       } finally {
         submitBtn.disabled = false;
+        submitBtn.style.display = 'flex';
+        if (stopBtn) stopBtn.style.display = 'none';
+        activeAbortController = null;
+      }
+    });
+  }
+
+  // --- Stop AI Generation Handler ---
+  if (stopBtn) {
+    stopBtn.addEventListener('click', () => {
+      if (activeAbortController) {
+        activeAbortController.abort();
+        activeAbortController = null;
+      }
+      submitBtn.disabled = false;
+      submitBtn.style.display = 'flex';
+      stopBtn.style.display = 'none';
+      if (activeChatId) {
+        displayAiResponse(`<!DOCTYPE html><html><head>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap">
+        </head><body style="background:#110e08;color:#dfd4c0;font-family:'DM Sans',sans-serif;padding:32px;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:20px;">⏹️</span>
+          <span style="font-size:15px;color:#fbf7ee;">Generation stopped by user.</span>
+        </body></html>`, null, activeChatId);
       }
     });
   }
