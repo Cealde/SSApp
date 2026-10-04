@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('file-input');
     const output = document.getElementById('output');
 
-    createColorpalette(["#235E5E", "#558968", "#558968", "#EFECDE", "#381A1A"]);
+    createColorpalette(["#235E5E", "#558968", "#a2af9f", "#EFECDE", "#381A1A"]);
+    createColorpalette(["#2f00b1", "#195981", "#6fffa2", "#d5ffef", "#220035"]);
+    createFontBox("https://fonts.googleapis.com/css2?family=Isometra&display=swap");
+    createFontBox("https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap");
+    createFontBox("https://fonts.googleapis.com/css2?family=Ewert&display=swap");
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -113,4 +117,26 @@ function createColorpalette(colors) {
 
     const target = document.getElementById('palette-container') || document.body;
     target.appendChild(palleteContainer);
+}
+
+function createFontBox(fontLink) {
+
+    const fontContainer = document.createElement('div');
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = fontLink;
+
+    fontContainer.className = "font-container";
+
+    const url = new URL(fontLink);
+    const fontName = url.searchParams.get("family").split(":")[0].replace(/\+/g, " ");
+
+    document.head.appendChild(link);
+    fontContainer.textContent = fontName;
+    link.onload = () => {
+        fontContainer.style.fontFamily = `"${fontName}"`;
+    };
+
+    const target = document.getElementById('fonts-container') || document.body;
+    target.appendChild(fontContainer);
 }
