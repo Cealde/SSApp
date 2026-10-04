@@ -1,16 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap");
+
 :root {
-  --bg-dark: #0e0505;
-  --bg-panel: #160808;
-  --bg-inner: #1f0b0b;
-  --border-color: rgba(255, 90, 95, 0.16);
-  --border-highlight: rgba(255, 90, 95, 0.4);
-  --text-main: #f5f5f5;
-  --text-muted: #b89898;
-  --text-dim: #7d6565;
-  --accent-orange: #ff5722;
-  --accent-red: #d4101a;
-  --accent-hover: #ff784e;
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bg-0: #090909;
+  --bg-1: #140707;
+  --bg-2: #1a0b0b;
+  --panel: rgba(24, 10, 10, 0.72);
+  --panel-strong: rgba(15, 7, 7, 0.85);
+  --panel-soft: rgba(23, 12, 12, 0.5);
+  --line: rgba(255, 87, 87, 0.17);
+  --line-strong: rgba(255, 87, 87, 0.35);
+  --text: #fff5f5;
+  --muted: #e6b0b0;
+  --muted-strong: #ffd8d8;
+  --accent: #d4101a;
+  --accent-alt: #ff5a5f;
+  --accent-soft: rgba(212, 16, 26, 0.2);
+  --danger: #ff6b6b;
+  --success: #4ade80;
+  --shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+  --button-shadow: 0 12px 24px rgba(212, 16, 26, 0.28);
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-title: "Momo Trust Display", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
@@ -22,131 +32,173 @@
 html, body {
   height: 100%;
   width: 100%;
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  font-family: var(--font-family);
+  background:
+    radial-gradient(circle at top left, rgba(212, 16, 26, 0.24), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 90, 95, 0.18), transparent 24%),
+    linear-gradient(135deg, var(--bg-0), var(--bg-1) 38%, var(--bg-2));
+  color: var(--text);
+  font-family: var(--font-body);
   overflow: hidden;
 }
 
-/* App Layout Grid */
+/* Ambient glow accents like login */
+.ambient {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-one {
+  width: 420px;
+  height: 420px;
+  background: rgba(212, 16, 26, 0.2);
+  top: 0;
+  left: 0;
+}
+
+.ambient-two {
+  width: 480px;
+  height: 480px;
+  background: rgba(255, 90, 95, 0.15);
+  right: 0;
+  bottom: 0;
+}
+
+/* App Container */
 .app-container {
+  position: relative;
+  z-index: 1;
   display: flex;
   height: 100vh;
   width: 100vw;
-  padding: 16px;
-  gap: 16px;
+  padding: 18px 20px;
+  gap: 18px;
 }
 
 /* Left Sidebar */
 .left-sidebar {
-  width: 250px;
-  min-width: 220px;
+  width: 240px;
+  min-width: 210px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   height: 100%;
 }
 
 .brand-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.icon-placeholder {
-  width: 44px;
-  height: 44px;
-  border: 1.5px dashed var(--border-highlight);
-  border-radius: 12px;
-  background: rgba(255, 90, 95, 0.04);
+/* Icon image slot with no border around it */
+.brand-icon-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  transition: all 0.2s ease;
+  margin-bottom: 2px;
 }
 
-.text-placeholder {
-  min-height: 20px;
-  padding: 2px 4px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-weight: 600;
+.brand-icon-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
+  border: none;
+  background: transparent;
 }
 
+/* Dashboard Button styled like login interactive elements */
 .dashboard-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  color: var(--text-main);
+  color: var(--text);
   text-decoration: none;
   font-size: 0.88rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
   width: fit-content;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .dashboard-btn:hover {
-  background: rgba(255, 90, 95, 0.1);
-  border-color: var(--border-highlight);
+  background: var(--accent-soft);
+  border-color: var(--accent-alt);
   transform: translateY(-1px);
 }
 
-.dashboard-btn .btn-icon {
-  font-size: 0.95rem;
-  color: var(--accent-orange);
+.dashboard-btn .btn-arrow {
+  font-size: 0.85rem;
+  color: var(--accent-alt);
 }
 
-/* Chat History Navigation */
+/* Empty text slot below dashboard */
+.brand-text-wrapper {
+  min-height: 18px;
+}
+
+.brand-text {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Chat History Panel matching login panel theme */
 .chat-history-panel {
   flex: 1;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
   padding: 18px 14px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .sidebar-title {
-  font-size: 0.85rem;
+  font-family: var(--font-title);
+  font-size: 1.1rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: var(--text);
   margin-bottom: 14px;
-  padding: 0 8px;
+  padding: 0 6px;
+  letter-spacing: -0.01em;
 }
 
 .chat-history-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   overflow-y: auto;
   flex: 1;
 }
 
+/* Chat items are pure clickable text without box frames */
 .chat-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
   cursor: pointer;
   user-select: none;
-  transition: all 0.15s ease;
+  transition: color 180ms ease, background 180ms ease;
   background: transparent;
   border: none;
   width: 100%;
@@ -154,7 +206,7 @@ html, body {
 }
 
 .chat-item:hover {
-  color: var(--text-main);
+  color: var(--text);
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -167,23 +219,31 @@ html, body {
 
 .chat-item .active-arrow {
   display: none;
-  font-size: 0.85rem;
-  color: var(--accent-orange);
+  font-size: 0.9rem;
+  color: var(--accent-alt);
   margin-left: 8px;
   flex-shrink: 0;
 }
 
 .chat-item.active {
-  color: var(--text-main);
+  color: var(--text);
   font-weight: 600;
-  background: rgba(255, 90, 95, 0.08);
 }
 
 .chat-item.active .active-arrow {
   display: inline-block;
 }
 
-/* Main Content Area */
+/* Empty state message for chat history */
+.empty-chat-history {
+  padding: 12px 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* Main Area */
 .main-area {
   flex: 1;
   display: flex;
@@ -193,17 +253,20 @@ html, body {
   min-width: 0;
 }
 
-/* Chat Log & Message Flow */
+/* Chat Container */
 .chat-container {
   flex: 1;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 22px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 /* User Message Bubble */
@@ -213,26 +276,27 @@ html, body {
 }
 
 .user-bubble {
-  background: rgba(255, 90, 95, 0.12);
-  border: 1px solid var(--border-highlight);
-  color: var(--text-main);
+  background: var(--accent-soft);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
   padding: 10px 18px;
   border-radius: 18px 18px 4px 18px;
   max-width: 75%;
   font-size: 0.95rem;
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: break-word;
 }
 
-/* AI Engine Card */
+/* AI Response Card */
 .ai-response-card {
-  background: var(--bg-inner);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 18px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: inset 0 0 35px 10px rgba(8, 3, 3, 0.6);
 }
 
 .ai-header {
@@ -244,32 +308,32 @@ html, body {
 
 .ai-text {
   font-size: 0.95rem;
-  color: var(--text-main);
-  line-height: 1.4;
+  color: var(--text);
+  line-height: 1.45;
   font-weight: 500;
 }
 
 .engine-badge {
-  background: var(--accent-orange);
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
+  box-shadow: var(--button-shadow);
 }
 
 /* Iframe Container */
 .iframe-wrapper {
   width: 100%;
-  height: 480px;
-  border-radius: 12px;
+  height: 520px;
+  border-radius: 14px;
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: #090303;
+  border: 1px solid var(--line);
+  background: #090505;
   position: relative;
 }
 
@@ -280,42 +344,51 @@ html, body {
   display: block;
 }
 
-/* Bottom Prompt & Input Box */
+/* Bottom Prompt & Input Box - made taller as requested */
 .prompt-box-form {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  padding: 14px 18px;
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  gap: 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  min-height: 84px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.prompt-box-form:focus-within {
+  border-color: rgba(212, 16, 26, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 16, 26, 0.18), var(--shadow);
 }
 
 .input-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .prompt-textarea {
   width: 100%;
-  min-height: 52px;
-  max-height: 140px;
+  min-height: 60px;
+  max-height: 160px;
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text-main);
+  color: var(--text);
   font-family: inherit;
   font-size: 0.98rem;
-  line-height: 1.4;
+  line-height: 1.5;
   resize: none;
-  padding: 6px 4px;
+  padding: 4px 0;
 }
 
 .prompt-textarea::placeholder {
-  color: var(--text-dim);
+  color: rgba(230, 176, 176, 0.45);
 }
 
 .attached-files-list {
@@ -325,12 +398,12 @@ html, body {
 }
 
 .file-chip {
-  background: rgba(255, 90, 95, 0.12);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 0.8rem;
+  color: var(--muted-strong);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -338,42 +411,42 @@ html, body {
 
 .file-chip .remove-file {
   cursor: pointer;
-  font-size: 0.8rem;
-  color: var(--text-dim);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1;
 }
 
 .file-chip .remove-file:hover {
-  color: var(--accent-orange);
+  color: var(--accent-alt);
 }
 
 /* Prompt Action Buttons */
 .prompt-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin-bottom: 2px;
 }
 
 .file-upload-btn {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 300;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
   position: relative;
 }
 
 .file-upload-btn:hover {
-  background: rgba(255, 90, 95, 0.1);
-  color: var(--text-main);
-  border-color: var(--border-highlight);
+  background: var(--accent-soft);
+  color: var(--text);
+  border-color: var(--accent-alt);
 }
 
 .file-upload-btn input[type="file"] {
@@ -385,25 +458,32 @@ html, body {
   height: 100%;
 }
 
+.action-icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
 .submit-prompt-btn {
   width: 48px;
   height: 48px;
   border-radius: 12px;
   border: none;
-  background: var(--accent-orange);
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
+  transition: all 200ms ease;
+  box-shadow: var(--button-shadow);
 }
 
 .submit-prompt-btn:hover {
-  background: var(--accent-hover);
   transform: translateY(-1px);
+  filter: brightness(1.1);
 }
 
 .submit-prompt-btn:active {
@@ -411,12 +491,12 @@ html, body {
 }
 
 .submit-prompt-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -427,20 +507,20 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 90, 95, 0.15);
+  background: rgba(255, 87, 87, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 90, 95, 0.3);
+  background: rgba(255, 87, 87, 0.4);
 }
 
 /* Responsiveness */
 @media (max-width: 860px) {
   .app-container {
     flex-direction: column;
-    padding: 10px;
-    gap: 10px;
+    padding: 12px;
+    gap: 12px;
   }
 
   .left-sidebar {
@@ -454,6 +534,6 @@ html, body {
   }
 
   .iframe-wrapper {
-    height: 340px;
+    height: 380px;
   }
 }

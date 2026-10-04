@@ -4,65 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SathyaSethu | Prompt Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/css/prompt.css">
 </head>
 <body>
+  <!-- Ambient background glow matching login -->
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
   <div class="app-container">
     <!-- Left Navigation & Sidebar -->
     <aside class="left-sidebar">
       <div class="brand-section">
-        <!-- Empty space for icon above dashboard button -->
-        <div class="icon-placeholder" id="brandIconSlot" aria-label="Brand Icon Slot">
-          <!-- Icon slot reserved for future branding -->
-          <span>✦</span>
+        <!-- Icon is an img with NO border around it -->
+        <div class="brand-icon-wrapper" id="brandIconWrapper">
+          <img src="" alt="" class="brand-icon-img" id="brandIconImg" style="display:none;" />
         </div>
         
         <!-- Dashboard Button -->
         <a href="/dashboard" class="dashboard-btn" id="dashboardBtn">
-          <span class="btn-icon">◀</span>
+          <span class="btn-arrow">◀</span>
           <span>Dashboard</span>
         </a>
 
-        <!-- Empty space for text below icon / dashboard -->
-        <div class="text-placeholder" id="brandTextSlot">
-          <!-- Text slot reserved for future branding/org info -->
+        <!-- Empty text slot below icon and dashboard -->
+        <div class="brand-text-wrapper" id="brandTextWrapper">
+          <span class="brand-text" id="brandText"></span>
         </div>
       </div>
 
-      <!-- Chat History Panel -->
+      <!-- Chat History Panel (pure text clickable items, no placeholder list) -->
       <nav class="chat-history-panel" aria-label="Chat History">
         <h2 class="sidebar-title">Chat History</h2>
         <ul class="chat-history-list" id="chatHistoryList">
-          <li>
-            <button type="button" class="chat-item" data-id="chat-1">
-              <span class="item-title">Make pdf</span>
-              <span class="active-arrow" aria-hidden="true">&#9668;</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="chat-item" data-id="chat-2">
-              <span class="item-title">Color Pallete</span>
-              <span class="active-arrow" aria-hidden="true">&#9668;</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="chat-item" data-id="chat-3">
-              <span class="item-title">Make ppt</span>
-              <span class="active-arrow" aria-hidden="true">&#9668;</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="chat-item" data-id="chat-4">
-              <span class="item-title">Get weather</span>
-              <span class="active-arrow" aria-hidden="true">&#9668;</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="chat-item active" data-id="chat-5">
-              <span class="item-title">Make news</span>
-              <span class="active-arrow" aria-hidden="true">&#9668;</span>
-            </button>
-          </li>
+          <!-- Populated dynamically when chats occur -->
         </ul>
       </nav>
     </aside>
@@ -71,19 +51,15 @@
     <main class="main-area">
       <!-- Chat Conversation Log -->
       <section class="chat-container" id="chatContainer">
-        <!-- User Query Bubble -->
-        <div class="user-message-row">
-          <div class="user-bubble" id="userMessageText">
-            Make a webpage for news and thing
-          </div>
+        <!-- User Query Bubble (hidden until first query is entered) -->
+        <div class="user-message-row" id="userMessageRow" style="display: none;">
+          <div class="user-bubble" id="userMessageText"></div>
         </div>
 
-        <!-- AI Engine Response Card -->
-        <div class="ai-response-card" id="aiResponseCard">
+        <!-- AI Engine Response Card (hidden until a query/result is loaded) -->
+        <div class="ai-response-card" id="aiResponseCard" style="display: none;">
           <div class="ai-header">
-            <p class="ai-text" id="aiStatusText">
-              Sure here is the news webpage made after your color pallete and font choices
-            </p>
+            <p class="ai-text" id="aiStatusText"></p>
             <span class="engine-badge">SS ENGINE</span>
           </div>
 
@@ -99,7 +75,7 @@
         </div>
       </section>
 
-      <!-- Bottom Prompt & File Upload Area -->
+      <!-- Bottom Prompt & File Upload Area (taller prompt window) -->
       <form class="prompt-box-form" id="promptForm">
         <div class="input-container">
           <div class="attached-files-list" id="attachedFilesList"></div>
@@ -107,14 +83,14 @@
             id="promptInput"
             class="prompt-textarea"
             placeholder="What should we do today"
-            rows="1"
+            rows="2"
           ></textarea>
         </div>
 
         <div class="prompt-actions">
-          <!-- File Upload Button accepting any file format -->
+          <!-- File Upload Button with img icon, accepts any file format -->
           <label class="file-upload-btn" title="Upload files" for="fileInput">
-            <span aria-hidden="true">+</span>
+            <img src="/assets/file-plus.svg" alt="Attach files" class="action-icon-img" />
             <input
               type="file"
               id="fileInput"
@@ -123,9 +99,9 @@
             />
           </label>
 
-          <!-- Submit Button -->
+          <!-- Submit Button with img icon -->
           <button type="submit" class="submit-prompt-btn" id="submitBtn" aria-label="Send Prompt">
-            <span aria-hidden="true">&#10148;</span>
+            <img src="/assets/send.svg" alt="Send" class="action-icon-img" />
           </button>
         </div>
       </form>

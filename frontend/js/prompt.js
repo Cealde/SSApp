@@ -5,74 +5,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('fileInput');
   const attachedFilesList = document.getElementById('attachedFilesList');
   const contentIframe = document.getElementById('contentIframe');
+  const userMessageRow = document.getElementById('userMessageRow');
   const userMessageText = document.getElementById('userMessageText');
+  const aiResponseCard = document.getElementById('aiResponseCard');
   const aiStatusText = document.getElementById('aiStatusText');
   const submitBtn = document.getElementById('submitBtn');
+  const brandIconImg = document.getElementById('brandIconImg');
 
-  // Track attached files
+  // Track attached files and chat entries
   let attachedFiles = [];
+  const chatSessions = [];
 
-  // Default sample news page mockup matching the blueprint and photo
-  const defaultNewsHtml = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #120909; color: #f0f0f0; padding: 24px; min-height: 100vh; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff5722; padding-bottom: 12px; margin-bottom: 20px; }
-        .title-bar { display: flex; align-items: center; gap: 8px; }
-        .accent-bar { width: 4px; height: 20px; background: #ff5722; border-radius: 2px; }
-        .title { font-size: 1.25rem; font-weight: 700; color: #fff; }
-        .org-name { font-size: 0.9rem; color: #a08c8c; display: flex; align-items: center; gap: 8px; }
-        .avatar-circle { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #a08c8c; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; }
-        .headline { font-size: 1.35rem; font-weight: 700; margin-bottom: 18px; line-height: 1.3; color: #ffffff; }
-        .media-box { width: 100%; height: 220px; border-radius: 12px; border: 1px solid rgba(255, 90, 95, 0.2); background: rgba(255, 90, 95, 0.04); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .media-icon { font-size: 2rem; color: #ff5722; opacity: 0.8; }
-        .media-placeholder-text { font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: #a08c8c; font-weight: 600; }
-        .article-body { font-size: 0.95rem; line-height: 1.6; color: #d0c0c0; }
-        .article-body p { margin-bottom: 12px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="title-bar">
-          <div class="accent-bar"></div>
-          <div class="title">Daily News</div>
-        </div>
-        <div class="org-name">
-          Organization Name
-          <span class="avatar-circle">👤</span>
-        </div>
-      </div>
-      <h1 class="headline">Breakthrough in Autonomous Systems & Neural Knowledge Networks</h1>
-      <div class="media-box">
-        <div class="media-icon">🖼️</div>
-        <div class="media-placeholder-text">Article Image Placeholder (1200 x 600)</div>
-      </div>
-      <div class="article-body">
-        <p>Synthesized multi-source reporting: distributed computational clusters deploy real-time intelligence feeds across global communication nodes.</p>
-        <p>Editorial styling dynamically harmonized with your organization's custom color palette, responsive glassmorphism hierarchy, and typography.</p>
-      </div>
-    </body>
-    </html>
-  `;
+  // Hide broken icon placeholder if no source is given
+  if (brandIconImg) {
+    if (brandIconImg.getAttribute('src') && brandIconImg.getAttribute('src').trim() !== '') {
+      brandIconImg.style.display = 'block';
+    } else {
+      brandIconImg.style.display = 'none';
+    }
+  }
 
-  // Fetch initial code if backend has /api/give-code setup, else fallback to default mockup
+  // Check if backend has initial code from /api/give-code
   fetch('/api/give-code')
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {
       const code = data?.code || data?.html;
       if (code && code.trim()) {
-        contentIframe.srcdoc = code;
-      } else {
-        contentIframe.srcdoc = defaultNewsHtml;
+        displayAiResponse('Loaded generated workspace output', code);
       }
     })
-    .catch(() => {
-      contentIframe.srcdoc = defaultNewsHtml;
-    });
+    .catch(() => {});
+
+  // Function to show AI card and iframe
+  function displayAiResponse(statusMessage, htmlContent) {
+    if (aiResponseCard) {
+      aiResponseCard.style.display = 'flex';
+    }
+    if (aiStatusText) {
+      aiStatusText.textContent = statusMessage;
+    }
+    if (contentIframe) {
+      contentIframe.srcdoc = htmlContent;
+    }
+  }
 
   // Handle Chat History Selection with indicator arrow (◄)
   if (chatHistoryList) {
@@ -80,23 +55,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = e.target.closest('.chat-item');
       if (!btn) return;
 
-      // Update active state
+      const chatId = btn.dataset.id;
+      const targetSession = chatSessions.find((s) => s.id === chatId);
+
       chatHistoryList.querySelectorAll('.chat-item').forEach((item) => {
         item.classList.remove('active');
       });
       btn.classList.add('active');
 
-      const chatTitle = btn.querySelector('.item-title')?.textContent.trim() || 'Chat';
-      if (userMessageText) {
-        userMessageText.textContent = `${chatTitle}`;
-      }
-      if (aiStatusText) {
-        aiStatusText.textContent = `Displaying generated result for: ${chatTitle}`;
+      if (targetSession) {
+        if (userMessageRow && userMessageText) {
+          userMessageText.textContent = targetSession.prompt;
+          userMessageRow.style.display = 'flex';
+        }
+        displayAiResponse(targetSession.statusMessage, targetSession.htmlContent);
       }
     });
   }
 
-  // Handle File Input Selection (supports any file type)
+  // Handle File Input Selection (accepts any file format)
   if (fileInput) {
     fileInput.addEventListener('change', () => {
       const files = Array.from(fileInput.files || []);
@@ -135,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (promptInput) {
     promptInput.addEventListener('input', () => {
       promptInput.style.height = 'auto';
-      promptInput.style.height = `${Math.min(promptInput.scrollHeight, 140)}px`;
+      promptInput.style.height = `${Math.min(promptInput.scrollHeight, 160)}px`;
     });
 
     promptInput.addEventListener('keydown', (e) => {
@@ -146,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Submit Prompt to Backend (/api/give-files or /api/give)
+  // Submit Prompt to Backend
   if (promptForm) {
     promptForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -156,14 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (userMessageText) {
+      // Display user message bubble
+      if (userMessageRow && userMessageText) {
         userMessageText.textContent = text || `Uploaded ${attachedFiles.length} file(s)`;
+        userMessageRow.style.display = 'flex';
       }
 
-      if (aiStatusText) {
-        aiStatusText.textContent = 'Processing request with SS Engine...';
-      }
-
+      displayAiResponse('Processing request with SS Engine...', '');
       submitBtn.disabled = true;
 
       try {
@@ -188,34 +164,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await res.json().catch(() => ({}));
         const aiResult = data.ai_result || data.ai_response || data.code;
+        const msg = data.message || 'Output generated successfully.';
 
+        let htmlToDisplay = '';
         if (aiResult) {
           if (typeof aiResult === 'string' && (aiResult.includes('<html') || aiResult.includes('<!DOCTYPE') || aiResult.includes('</'))) {
-            contentIframe.srcdoc = aiResult;
+            htmlToDisplay = aiResult;
           } else {
-            contentIframe.srcdoc = `
-              <html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:20px;">
-                <pre style="white-space:pre-wrap;">${typeof aiResult === 'object' ? JSON.stringify(aiResult, null, 2) : aiResult}</pre>
+            htmlToDisplay = `
+              <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
+                <pre style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${typeof aiResult === 'object' ? JSON.stringify(aiResult, null, 2) : aiResult}</pre>
               </body></html>
             `;
           }
+        } else if (data.final_output) {
+          htmlToDisplay = `
+            <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
+              <h3 style="color:#ff5a5f;margin-bottom:12px;">Staged File Content</h3>
+              <pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;">${JSON.stringify(data.final_output, null, 2)}</pre>
+            </body></html>
+          `;
+        } else {
+          htmlToDisplay = `
+            <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
+              <p style="font-size:16px;">${msg}</p>
+            </body></html>
+          `;
         }
 
-        if (aiStatusText) {
-          aiStatusText.textContent = data.message || 'Output generated successfully.';
-        }
+        displayAiResponse(msg, htmlToDisplay);
 
-        // Add to chat history as new entry
-        if (text && chatHistoryList) {
+        // Add entry to chat history with arrow indicator (◄)
+        const chatTitle = text.length > 22 ? text.slice(0, 20) + '...' : (text || (attachedFiles[0]?.name ?? 'Untitled Prompt'));
+        const chatId = `chat-${Date.now()}`;
+        chatSessions.push({
+          id: chatId,
+          prompt: text || `Uploaded ${attachedFiles.length} file(s)`,
+          statusMessage: msg,
+          htmlContent: htmlToDisplay,
+        });
+
+        if (chatHistoryList) {
+          chatHistoryList.querySelectorAll('.chat-item').forEach((i) => i.classList.remove('active'));
           const newLi = document.createElement('li');
           newLi.innerHTML = `
-            <button type="button" class="chat-item active" data-id="chat-${Date.now()}">
-              <span class="item-title">${text.length > 20 ? text.slice(0, 18) + '...' : text}</span>
+            <button type="button" class="chat-item active" data-id="${chatId}">
+              <span class="item-title">${chatTitle}</span>
               <span class="active-arrow" aria-hidden="true">&#9668;</span>
             </button>
           `;
-          chatHistoryList.querySelectorAll('.chat-item').forEach((i) => i.classList.remove('active'));
-          chatHistoryList.appendChild(newLi);
+          chatHistoryList.prepend(newLi);
         }
 
         // Reset inputs
@@ -225,9 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAttachedFiles();
         if (fileInput) fileInput.value = '';
       } catch (err) {
-        if (aiStatusText) {
-          aiStatusText.textContent = `Error: ${err.message || 'Failed to process request'}`;
-        }
+        displayAiResponse(`Error: ${err.message || 'Failed to process request'}`, '');
       } finally {
         submitBtn.disabled = false;
       }
