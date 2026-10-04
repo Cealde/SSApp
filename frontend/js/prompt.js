@@ -92,57 +92,95 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(() => {});
   const chatContainer = document.getElementById('chatContainer');
   
-  // Function to show iframe directly without response box
-  function displayAiResponse(htmlContent, promptText, chatId) {
-    if (!chatContainer) return;
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Create loading message group immediately on query submission
+  function createLoadingMessageGroup(promptText, chatId) {
+    if (!chatContainer) return null;
     
     const wrapperId = `chat-group-${chatId}`;
     let groupWrapper = document.getElementById(wrapperId);
+    if (groupWrapper) return groupWrapper;
     
-    if (!groupWrapper) {
-      groupWrapper = document.createElement('div');
-      groupWrapper.id = wrapperId;
-      groupWrapper.className = 'chat-message-group';
-      groupWrapper.style.display = 'flex';
-      groupWrapper.style.flexDirection = 'column';
-      groupWrapper.style.gap = '16px';
-      groupWrapper.style.marginBottom = '24px';
-      
-      const userRow = document.createElement('div');
-      userRow.className = 'user-message-row';
-      userRow.innerHTML = `<div class="user-bubble">${promptText}</div>`;
-      groupWrapper.appendChild(userRow);
-      
-      const iframeWrapper = document.createElement('div');
-      iframeWrapper.className = 'iframe-wrapper glow-fade-in';
-      iframeWrapper.style.display = 'block';
-      iframeWrapper.innerHTML = `
-        <iframe class="preview-iframe" title="Rendered Output Preview" srcdoc=""></iframe>
-        <button type="button" class="dashboard-btn download-result-btn" style="position: absolute; bottom: 12px; right: 12px; z-index: 10;">
-          Download Zip
-        </button>
-      `;
-      groupWrapper.appendChild(iframeWrapper);
-      
-      chatContainer.appendChild(groupWrapper);
-      
-      // Auto-scroll to bottom on new message
-      setTimeout(() => {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 50);
+    groupWrapper = document.createElement('div');
+    groupWrapper.id = wrapperId;
+    groupWrapper.className = 'chat-message-group';
+    groupWrapper.style.display = 'flex';
+    groupWrapper.style.flexDirection = 'column';
+    groupWrapper.style.gap = '16px';
+    groupWrapper.style.marginBottom = '24px';
+    
+    const userRow = document.createElement('div');
+    userRow.className = 'user-message-row';
+    userRow.style.display = 'flex';
+    userRow.innerHTML = `<div class="user-bubble">${escapeHtml(promptText)}</div>`;
+    groupWrapper.appendChild(userRow);
+    
+    const iframeWrapper = document.createElement('div');
+    iframeWrapper.className = 'iframe-wrapper glow-fade-in';
+    iframeWrapper.style.display = 'block';
+    
+    const loadingHtml = `<!DOCTYPE html><html><body style="background:#110e08;color:#e2a221;font-family:sans-serif;padding:32px;display:flex;align-items:center;gap:12px;">
+      <style>
+        .spinner { width:22px; height:22px; border:3px solid rgba(226,162,33,0.3); border-top-color:#e2a221; border-radius:50%; animation:spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+      </style>
+      <div class="spinner"></div>
+      <span style="font-size:15px;letter-spacing:0.02em;">Generating output with AI... Please wait...</span>
+    </body></html>`;
+    
+    iframeWrapper.innerHTML = `
+      <iframe class="preview-iframe" title="Rendered Output Preview" srcdoc="${escapeHtml(loadingHtml)}"></iframe>
+      <button type="button" class="dashboard-btn download-result-btn" style="position: absolute; bottom: 12px; right: 12px; z-index: 10; display: none;">
+        Download Zip
+      </button>
+    `;
+    groupWrapper.appendChild(iframeWrapper);
+    
+    chatContainer.appendChild(groupWrapper);
+    
+    // Auto-scroll to bottom immediately
+    setTimeout(() => {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }, 20);
 
-      // Download Action
-      const downloadBtn = iframeWrapper.querySelector('.download-result-btn');
-      downloadBtn.addEventListener('click', async () => {
+    return groupWrapper;
+  }
+  
+  // Update message group with final AI response
+  function displayAiResponse(htmlContent, promptText, chatId) {
+    if (!chatContainer) return;
+    
+    let groupWrapper = document.getElementById(`chat-group-${chatId}`);
+    if (!groupWrapper && promptText && chatId) {
+      groupWrapper = createLoadingMessageGroup(promptText, chatId);
+    }
+    if (!groupWrapper) return;
+    
+    const iframe = groupWrapper.querySelector('.preview-iframe');
+    if (iframe) {
+      iframe.srcdoc = htmlContent;
+    }
+
+    const downloadBtn = groupWrapper.querySelector('.download-result-btn');
+    if (downloadBtn) {
+      downloadBtn.style.display = 'inline-flex';
+      downloadBtn.onclick = async () => {
         if (!window.JSZip) {
           alert('JSZip not loaded.');
           return;
         }
         const zip = new JSZip();
-        // Determine extension based on content heuristically
         const isHtml = htmlContent.includes('<html') || htmlContent.includes('<!DOCTYPE');
         const fileName = isHtml ? 'output.html' : 'output.md';
-        
         zip.file(fileName, htmlContent);
         
         const blob = await zip.generateAsync({ type: 'blob' });
@@ -154,12 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      });
-    }
-    
-    const iframe = groupWrapper.querySelector('.preview-iframe');
-    if (iframe) {
-      iframe.srcdoc = htmlContent;
+      };
     }
   }
 
@@ -186,6 +219,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Drag and Drop File Handling ---
+  let dropOverlay = document.getElementById('dropOverlay');
+  if (!dropOverlay) {
+    dropOverlay = document.createElement('div');
+    dropOverlay.id = 'dropOverlay';
+    dropOverlay.className = 'drop-overlay';
+    dropOverlay.innerHTML = `
+      <div class="drop-overlay-content">
+        <span style="font-size: 48px;">📁</span>
+        <p>Drop files here to attach</p>
+      </div>
+    `;
+    document.body.appendChild(dropOverlay);
+  }
+
+  let dragCounter = 0;
+  window.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragCounter++;
+    dropOverlay.classList.add('active');
+  });
+
+  window.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+
+  window.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+    }
+  });
+
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    dropOverlay.classList.remove('active');
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length > 0) {
+      files.forEach((file) => {
+        if (!attachedFiles.some((f) => f.name === file.name && f.size === file.size)) {
+          attachedFiles.push(file);
+        }
+      });
+      renderAttachedFiles();
+    }
+  });
+
   // Handle File Input Selection (accepts any file format)
   if (fileInput) {
     fileInput.addEventListener('change', () => {
@@ -196,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       renderAttachedFiles();
+      fileInput.value = '';
     });
   }
 
@@ -246,11 +330,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Display user message bubble
-      if (userMessageRow && userMessageText) {
-        userMessageText.textContent = text || `Uploaded ${attachedFiles.length} file(s)`;
-        userMessageRow.style.display = 'flex';
-      }
+      const promptText = text || `Uploaded ${attachedFiles.length} file(s)`;
+      const chatId = `chat-${Date.now()}`;
+
+      // Immediately create loading message group with user bubble & spinner
+      createLoadingMessageGroup(promptText, chatId);
+
+      // Copy attached files array and reset inputs immediately
+      const filesToSend = [...attachedFiles];
+      promptInput.value = '';
+      promptInput.style.height = 'auto';
+      attachedFiles = [];
+      renderAttachedFiles();
+      if (fileInput) fileInput.value = '';
 
       submitBtn.disabled = true;
 
@@ -271,11 +363,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         let res;
-        if (attachedFiles.length > 0) {
+        if (filesToSend.length > 0) {
           const formData = new FormData();
           formData.append('text', text);
           formData.append('config', JSON.stringify(configData));
-          attachedFiles.forEach((file) => {
+          filesToSend.forEach((file) => {
             formData.append('files', file);
           });
           res = await fetch('/api/give-files', {
@@ -298,8 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (aiResult) {
           if (typeof aiResult === 'object' && aiResult.palettes && aiResult.fonts) {
             // It's the website design choice step
-            const promptText = text || `Uploaded ${attachedFiles.length} file(s)`;
-            
             window.createButtonFunction(aiResult, async (selectedChoices) => {
               // Now that choices are made, call backend again!
               const nextConfig = { ...configData, ...selectedChoices };
@@ -308,11 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
               try {
                 // Re-send original request but with updated config
                 let followUpRes;
-                if (attachedFiles.length > 0) {
+                if (filesToSend.length > 0) {
                   const followUpForm = new FormData();
                   followUpForm.append('text', text);
                   followUpForm.append('config', JSON.stringify(nextConfig));
-                  attachedFiles.forEach(f => followUpForm.append('files', f));
+                  filesToSend.forEach(f => followUpForm.append('files', f));
                   followUpRes = await fetch('/api/give-files', { method: 'POST', body: followUpForm });
                 } else {
                   followUpRes = await fetch('/api/give', {
