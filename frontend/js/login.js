@@ -182,22 +182,50 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(data.detail || data.message || 'Invalid credentials or login failed.');
       }
 
-      const username = (data.user?.email || email).split('@')[0] || 'User';
+      const userObj = data.user || data.data?.user || { email, first_name: '' };
+      const orgObj = data.organization || data.data?.organization || {
+        name: data.organization_name || 'Unincorporated',
+        icon: data.organization_icon || data.icon || '',
+      };
+      const orgName = orgObj.name || data.organization_name || 'Unincorporated';
+      const orgIconUrl = orgObj.icon || data.organization_icon || data.icon || data.data?.organization_icon || data.data?.icon || '';
+
+      const username = data.user?.first_name || (data.user?.email || email).split('@')[0] || 'User';
       const authPayload = {
         token: data.access_token,
         email,
         username,
-        user: data.user,
-        organization: data.organization || {},
+        user: userObj,
+        organization: orgObj,
+        organizationName: orgName,
+        organizationIcon: orgIconUrl,
         remember: rememberInput.checked,
         timestamp: new Date().toISOString(),
       };
 
-      if (rememberInput.checked) {
-        localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      // Store in BOTH localStorage and sessionStorage so all workspace pages have immediate access
+      localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+      sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+
+      localStorage.setItem('organizationName', orgName);
+      sessionStorage.setItem('organizationName', orgName);
+      localStorage.setItem('organization-name', orgName);
+      sessionStorage.setItem('organization-name', orgName);
+
+      if (orgIconUrl) {
+        localStorage.setItem('organizationIcon', orgIconUrl);
+        sessionStorage.setItem('organizationIcon', orgIconUrl);
+        localStorage.setItem('organization-icon', orgIconUrl);
+        sessionStorage.setItem('organization-icon', orgIconUrl);
       } else {
-        sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
+        localStorage.removeItem('organizationIcon');
+        sessionStorage.removeItem('organizationIcon');
+        localStorage.removeItem('organization-icon');
+        sessionStorage.removeItem('organization-icon');
       }
+
+      localStorage.setItem('username', username);
+      sessionStorage.setItem('username', username);
 
       setStatus(loginStatus, 'Preparing your secure workspace...', 'success');
 
@@ -292,7 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Direct login: store authentication state and redirect immediately
       const userObj = data.user || data.data?.user || { email, first_name: firstName };
-      const orgObj = data.organization || data.data?.organization || { name: finalOrg, icon: '' };
+      const orgObj = data.organization || data.data?.organization || {
+        name: data.organization_name || finalOrg,
+        icon: data.organization_icon || data.icon || '',
+      };
+      const orgName = orgObj.name || data.organization_name || finalOrg;
+      const orgIconUrl = orgObj.icon || data.organization_icon || data.icon || data.data?.organization_icon || data.data?.icon || '';
       const token = data.access_token || data.data?.access_token || 'active_session';
 
       const authPayload = {
@@ -301,17 +334,34 @@ document.addEventListener('DOMContentLoaded', () => {
         username: firstName || userObj.first_name || email.split('@')[0],
         user: userObj,
         organization: orgObj,
+        organizationName: orgName,
+        organizationIcon: orgIconUrl,
         remember: true,
         timestamp: new Date().toISOString(),
       };
 
       localStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
       sessionStorage.setItem('sathyasethu-auth', JSON.stringify(authPayload));
-      localStorage.setItem('organizationName', orgObj.name || finalOrg);
-      if (orgObj.icon) {
-        localStorage.setItem('organizationIcon', orgObj.icon);
+
+      localStorage.setItem('organizationName', orgName);
+      sessionStorage.setItem('organizationName', orgName);
+      localStorage.setItem('organization-name', orgName);
+      sessionStorage.setItem('organization-name', orgName);
+
+      if (orgIconUrl) {
+        localStorage.setItem('organizationIcon', orgIconUrl);
+        sessionStorage.setItem('organizationIcon', orgIconUrl);
+        localStorage.setItem('organization-icon', orgIconUrl);
+        sessionStorage.setItem('organization-icon', orgIconUrl);
+      } else {
+        localStorage.removeItem('organizationIcon');
+        sessionStorage.removeItem('organizationIcon');
+        localStorage.removeItem('organization-icon');
+        sessionStorage.removeItem('organization-icon');
       }
+
       localStorage.setItem('username', authPayload.username);
+      sessionStorage.setItem('username', authPayload.username);
 
       setStatus(signupStatus, 'Account created! Redirecting to workspace...', 'success');
 

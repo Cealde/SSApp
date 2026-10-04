@@ -275,6 +275,54 @@ async def _verify_organization(org_name: str, org_password: str, key: str) -> di
             )
         return org_record
 
+async def _fetch_organization_details(org_name: str, key: str) -> dict:
+    """
+    Queries Supabase organization table (with case-insensitive matching, table variants,
+    and column variants: icon, icon_url, logo, logo_url) and local fallback.
+    Returns {'name': ..., 'icon': ...}.
+    """
+    if not org_name or org_name.strip().lower() == "unincorporated":
+        return {"name": "Unincorporated", "icon": ""}
+
+    cleaned_name = org_name.strip()
+    resolved_name = cleaned_name
+    icon_url = ""
+
+    if key:
+        headers = get_headers()
+        urls_to_try = [
+            f"{SUPABASE_URL}/rest/v1/organization?name=ilike.{cleaned_name}&select=*",
+            f"{SUPABASE_URL}/rest/v1/organization?name=eq.{cleaned_name}&select=*",
+            f"{SUPABASE_URL}/rest/v1/organizations?name=ilike.{cleaned_name}&select=*",
+            f"{SUPABASE_URL}/rest/v1/organizations?name=eq.{cleaned_name}&select=*",
+        ]
+        async with httpx.AsyncClient() as client:
+            for u in urls_to_try:
+                try:
+                    resp = await client.get(u, headers=headers)
+                    if resp.status_code == 200 and resp.json():
+                        org_row = resp.json()[0]
+                        resolved_name = org_row.get("name") or resolved_name
+                        icon_url = (
+                            org_row.get("icon")
+                            or org_row.get("icon_url")
+                            or org_row.get("logo")
+                            or org_row.get("logo_url")
+                            or ""
+                        )
+                        if icon_url or resolved_name:
+                            return {"name": resolved_name, "icon": icon_url}
+                except Exception:
+                    pass
+
+    # Check local fallback
+    local_info = _LOCAL_ORGS.get(cleaned_name.lower(), {})
+    if local_info:
+        resolved_name = local_info.get("name") or resolved_name
+        icon_url = local_info.get("icon") or ""
+
+    return {"name": resolved_name, "icon": icon_url}
+
 async def _sync_user_supabase_records(
     user_id: Optional[str],
     email: str,
@@ -422,20 +470,10 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         # Step 4: Sync to both user_details and profiles tables
         await _sync_user_supabase_records(user_id, email, first_name, org_name, token)
 
-        # Retrieve organization icon if available
-        org_icon = ""
-        if org_name and org_name.lower() != "unincorporated":
-            try:
-                async with httpx.AsyncClient() as client:
-                    org_resp = await client.get(
-                        f"{SUPABASE_URL}/rest/v1/organization?name=eq.{org_name}&select=name,icon",
-                        headers=get_headers()
-                    )
-                if org_resp.status_code == 200 and org_resp.json():
-                    org_info = org_resp.json()[0]
-                    org_icon = org_info.get("icon") or ""
-            except Exception:
-                pass
+        # Retrieve organization icon and name
+        org_details = await _fetch_organization_details(org_name, key)
+        org_icon = org_details.get("icon", "")
+        org_name = org_details.get("name", org_name)
 
         return {
             "access_token": token or f"session_{user_id or 'anon'}",
@@ -449,6 +487,9 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
                 "name": org_name,
                 "icon": org_icon
             },
+            "organization_name": org_name,
+            "organization_icon": org_icon,
+            "icon": org_icon,
             "message": "User registered and logged in successfully."
         }
     else:
@@ -458,7 +499,9 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         _LOCAL_USERS[email] = auth_data.password
         user_id = f"usr_{abs(hash(email)):x}"
         await _sync_user_supabase_records(user_id, email, first_name, org_name, token=None)
-        org_info = _LOCAL_ORGS.get(org_name.lower(), {})
+        org_details = await _fetch_organization_details(org_name, "")
+        org_icon = org_details.get("icon", "")
+        org_name = org_details.get("name", org_name)
         return {
             "access_token": f"dev_token_{user_id}",
             "token_type": "bearer",
@@ -469,8 +512,11 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             },
             "organization": {
                 "name": org_name,
-                "icon": org_info.get("icon", "")
+                "icon": org_icon
             },
+            "organization_name": org_name,
+            "organization_icon": org_icon,
+            "icon": org_icon,
             "message": "User registered and logged in successfully."
         }
 
@@ -556,20 +602,9 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
         await _sync_user_supabase_records(user_id, email, first_name, org_name, token)
 
         # Step 4: Retrieve organization icon from the organization table
-        org_icon = ""
-        if org_name and org_name.lower() != "unincorporated":
-            try:
-                async with httpx.AsyncClient() as client:
-                    org_resp = await client.get(
-                        f"{SUPABASE_URL}/rest/v1/organization?name=eq.{org_name}&select=name,icon",
-                        headers=get_headers()
-                    )
-                if org_resp.status_code == 200 and org_resp.json():
-                    org_info = org_resp.json()[0]
-                    org_icon = org_info.get("icon") or ""
-                    org_name = org_info.get("name") or org_name
-            except Exception:
-                pass
+        org_details = await _fetch_organization_details(org_name, key)
+        org_icon = org_details.get("icon", "")
+        org_name = org_details.get("name", org_name)
 
         return {
             "access_token": token,
@@ -582,7 +617,10 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
             "organization": {
                 "name": org_name,
                 "icon": org_icon
-            }
+            },
+            "organization_name": org_name,
+            "organization_icon": org_icon,
+            "icon": org_icon
         }
     else:
         # Local dev fallback
@@ -593,10 +631,13 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
         user_details = _LOCAL_USER_DETAILS.get(email, {})
         org_name = user_details.get("organization", "DemoOrg")
         first_name = user_details.get("first_name", "User")
-        org_info = _LOCAL_ORGS.get(org_name.lower(), {})
 
         user_id = user_details.get("id") or f"usr_{abs(hash(email)):x}"
         await _sync_user_supabase_records(user_id, email, first_name, org_name, token=None)
+
+        org_details = await _fetch_organization_details(org_name, "")
+        org_icon = org_details.get("icon", "")
+        org_name = org_details.get("name", org_name)
 
         return {
             "access_token": f"dev_token_{user_id}",
@@ -608,8 +649,11 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
             },
             "organization": {
                 "name": org_name,
-                "icon": org_info.get("icon", "")
-            }
+                "icon": org_icon
+            },
+            "organization_name": org_name,
+            "organization_icon": org_icon,
+            "icon": org_icon
         }
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:

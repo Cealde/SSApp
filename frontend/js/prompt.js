@@ -15,13 +15,52 @@ document.addEventListener('DOMContentLoaded', () => {
   let attachedFiles = [];
   const chatSessions = [];
 
-  // Hide broken icon placeholder if no source is given
+  // Retrieve saved authentication and organization info from storage
+  const authPayload = localStorage.getItem('sathyasethu-auth') || sessionStorage.getItem('sathyasethu-auth');
+  let parsedAuth = null;
+  if (authPayload) {
+    try {
+      parsedAuth = JSON.parse(authPayload);
+    } catch (e) {
+      console.warn('Could not parse auth payload:', e);
+    }
+  }
+
+  const orgIconUrl = localStorage.getItem('organizationIcon') ||
+                     sessionStorage.getItem('organizationIcon') ||
+                     localStorage.getItem('organization-icon') ||
+                     sessionStorage.getItem('organization-icon') ||
+                     parsedAuth?.organizationIcon ||
+                     parsedAuth?.organization?.icon ||
+                     parsedAuth?.icon ||
+                     '';
+
+  const orgName = localStorage.getItem('organizationName') ||
+                  sessionStorage.getItem('organizationName') ||
+                  localStorage.getItem('organization-name') ||
+                  sessionStorage.getItem('organization-name') ||
+                  parsedAuth?.organizationName ||
+                  parsedAuth?.organization?.name ||
+                  (typeof parsedAuth?.organization === 'string' ? parsedAuth.organization : null) ||
+                  '';
+
+  // Display organization logo if icon url is available
   if (brandIconImg) {
-    if (brandIconImg.getAttribute('src') && brandIconImg.getAttribute('src').trim() !== '') {
+    if (orgIconUrl) {
+      brandIconImg.src = orgIconUrl;
+      brandIconImg.alt = orgName ? `${orgName} Logo` : 'Organization Logo';
       brandIconImg.style.display = 'block';
+      brandIconImg.onerror = () => {
+        brandIconImg.style.display = 'none';
+      };
     } else {
       brandIconImg.style.display = 'none';
     }
+  }
+
+  const brandText = document.getElementById('brandText');
+  if (brandText && orgName && orgName.toLowerCase() !== 'unincorporated') {
+    brandText.textContent = orgName;
   }
 
   // Check if backend has initial code from /api/give-code

@@ -48,15 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // 3. Organization Info from Local Storage
+  // 3. Organization Info from Local Storage or Session Storage
   const orgName = localStorage.getItem('organizationName') ||
+                  sessionStorage.getItem('organizationName') ||
                   localStorage.getItem('organization-name') ||
-                  parsedAuth?.organization ||
+                  sessionStorage.getItem('organization-name') ||
+                  parsedAuth?.organizationName ||
+                  parsedAuth?.organization?.name ||
+                  (typeof parsedAuth?.organization === 'string' ? parsedAuth.organization : null) ||
                   'Unincorporated';
 
   const orgIconUrl = localStorage.getItem('organizationIcon') ||
+                     sessionStorage.getItem('organizationIcon') ||
                      localStorage.getItem('organization-icon') ||
+                     sessionStorage.getItem('organization-icon') ||
                      parsedAuth?.organizationIcon ||
+                     parsedAuth?.organization?.icon ||
+                     parsedAuth?.icon ||
                      '';
 
   const orgNameText = document.getElementById('orgNameText');
