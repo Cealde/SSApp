@@ -386,17 +386,33 @@ async def _sync_user_supabase_records(
 
     async with httpx.AsyncClient() as client:
         ok_ud, err_ud = await _upsert_to_supabase_table(client, "user_details", user_details_record, write_headers)
-        if not ok_ud:
-            print(f"[Supabase Sync] Warning: user_details update: {err_ud}")
+        if ok_ud:
+            print(f"[Supabase Sync] Successfully updated 'user_details' table for {email}")
+        else:
+            print(f"[Supabase Sync] Notice for 'user_details': {err_ud}")
+
         ok_prof, err_prof = await _upsert_to_supabase_table(client, "profiles", profiles_record, write_headers)
-        if not ok_prof:
-            print(f"[Supabase Sync] Warning: profiles update: {err_prof}")
+        if ok_prof:
+            print(f"[Supabase Sync] Successfully updated 'profiles' table for {email}")
+        else:
+            print(f"[Supabase Sync] Notice for 'profiles': {err_prof}")
+
+        await _upsert_to_supabase_table(client, "users", user_details_record, write_headers)
+
+def _check_supabase_config():
+    key = get_supabase_key()
+    if not key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="SUPABASE_PUBLISHABLE_KEY is not set in your .env file. Please copy your Supabase anon/publishable key from your Supabase Dashboard (Settings -> API) and paste it into .env as SUPABASE_PUBLISHABLE_KEY=your_key_here."
+        )
 
 async def sign_up_user(auth_data: SignUpRequest) -> dict:
     """
     Validates organization, registers user with Supabase Auth,
     and updates both user_details and profiles tables.
     """
+    _check_supabase_config()
     key = get_supabase_key()
     email = auth_data.email.strip().lower()
     first_name = (auth_data.first_name or "").strip()
@@ -525,6 +541,7 @@ async def sign_in_user(auth_data: LoginRequest) -> dict:
     Authenticates user, pulls their organization from user_details / profiles,
     ensures records are synced, and retrieves organization name and icon.
     """
+    _check_supabase_config()
     key = get_supabase_key()
     email = auth_data.email.strip().lower()
 
