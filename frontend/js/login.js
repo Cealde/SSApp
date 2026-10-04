@@ -21,6 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMode = window.location.hash === '#signup' ? 'signup' : 'login';
   let signupEmailValue = '';
 
+  const toTitleCase = (str) => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+      .join(' ');
+  };
+
   const clearStatus = (node) => {
     if (!node) return;
     node.textContent = '';
@@ -187,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
         name: data.organization_name || 'Unincorporated',
         icon: data.organization_icon || data.icon || '',
       };
-      const orgName = orgObj.name || data.organization_name || 'Unincorporated';
+      const rawOrgName = orgObj.name || data.organization_name || 'Unincorporated';
+      const orgName = toTitleCase(rawOrgName);
       const orgIconUrl = orgObj.icon || data.organization_icon || data.icon || data.data?.organization_icon || data.data?.icon || '';
 
       const username = data.user?.first_name || (data.user?.email || email).split('@')[0] || 'User';
@@ -230,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus(loginStatus, 'Preparing your secure workspace...', 'success');
 
       window.setTimeout(() => {
-        window.location.href = '/loading';
+        window.location.href = '/dashboard';
       }, 350);
     } catch (error) {
       setStatus(loginStatus, error.message || 'Login failed.', 'error');
@@ -333,7 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
         name: data.organization_name || finalOrg,
         icon: data.organization_icon || data.icon || '',
       };
-      const orgName = orgObj.name || data.organization_name || finalOrg;
+      const rawOrgName = orgObj.name || data.organization_name || finalOrg;
+      const orgName = toTitleCase(rawOrgName);
       const orgIconUrl = orgObj.icon || data.organization_icon || data.icon || data.data?.organization_icon || data.data?.icon || '';
       const token = data.access_token || data.data?.access_token || 'active_session';
 

@@ -58,9 +58,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function toTitleCase(str) {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+      .join(' ');
+  }
+
   const brandText = document.getElementById('brandText');
   if (brandText && orgName && orgName.toLowerCase() !== 'unincorporated') {
-    brandText.textContent = orgName;
+    brandText.textContent = toTitleCase(orgName);
   }
 
   // Check if backend has initial code from /api/give-code

@@ -67,9 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
                      parsedAuth?.icon ||
                      '';
 
+  function toTitleCase(str) {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+      .join(' ');
+  }
+
   const orgNameText = document.getElementById('orgNameText');
   if (orgNameText) {
-    orgNameText.textContent = orgName;
+    orgNameText.textContent = toTitleCase(orgName);
   }
 
   const orgLogoImg = document.getElementById('orgLogoImg');

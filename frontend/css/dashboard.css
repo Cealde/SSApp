@@ -270,6 +270,7 @@ body {
   color: var(--text);
   letter-spacing: 0.02em;
   word-break: break-word;
+  text-transform: capitalize;
 }
 
 /* Projects Section */
