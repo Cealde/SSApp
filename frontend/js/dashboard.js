@@ -117,4 +117,27 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (err) {
     console.warn('Error reading projects:', err);
   }
+
+  // 5. Logout Button Handler
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      // Clear all authentication & organization session data
+      localStorage.removeItem('sathyasethu-auth');
+      sessionStorage.removeItem('sathyasethu-auth');
+      localStorage.removeItem('organizationName');
+      sessionStorage.removeItem('organizationName');
+      localStorage.removeItem('organization-name');
+      sessionStorage.removeItem('organization-name');
+      localStorage.removeItem('organizationIcon');
+      sessionStorage.removeItem('organizationIcon');
+      localStorage.removeItem('organization-icon');
+      sessionStorage.removeItem('organization-icon');
+      localStorage.removeItem('username');
+      sessionStorage.removeItem('username');
+
+      // Redirect to login page
+      window.location.href = '/login';
+    });
+  }
 });

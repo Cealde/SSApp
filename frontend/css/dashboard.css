@@ -114,6 +114,53 @@ body {
   text-align: center;
 }
 
+/* Dashboard Logout Button */
+.dashboard-logout-btn {
+  position: absolute;
+  top: 36px;
+  right: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(226, 162, 33, 0.2);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-decoration: none;
+}
+
+.dashboard-logout-btn svg {
+  stroke: var(--accent);
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.dashboard-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ff6b6b;
+  transform: translateY(-1px);
+}
+
+.dashboard-logout-btn:hover svg {
+  stroke: #ff6b6b;
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .dashboard-logout-btn {
+    position: static;
+    margin-top: 8px;
+  }
+}
+
 /* Main Container */
 .dashboard-container {
   position: relative;

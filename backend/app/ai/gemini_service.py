@@ -64,39 +64,47 @@ def format_system_instruction(config: Dict[str, Any], is_website_step_1: bool = 
                 "Never mix website HTML code or Mermaid code into presentation slides or social media posts."
             )
 
+        lang_suffix = f" IMPORTANT: Write all text for this deliverable entirely in {language}, not in English." if language and language.lower() not in ["english", "en"] else ""
+
         if "presentation" in formats:
             instructions.append(
                 "For 'presentation', output structured presentation slides separated by '---'. "
                 "Slide 1 must be the Title Slide. "
                 "Each subsequent slide must start with '## Slide Title' followed by bullet points. "
                 "Do NOT write 'Image Suggestion: ...' as a bullet point. If an image is relevant, include it on its own line using markdown image syntax: `![Image topic](https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800)`."
+                + lang_suffix
             )
         if "website" in formats:
             instructions.append(
                 "For 'website', output ONLY valid, self-contained HTML/CSS/JS code inside a ```html markdown code block. "
                 "Ensure it is fully responsive, modern, and beautiful. Do NOT put website code inside presentation slides."
+                + lang_suffix
             )
         if "mermaid" in formats or "infographic" in formats:
             instructions.append(
                 "For 'mermaid' or 'infographic' or 'diagram', output valid Mermaid code inside a ```mermaid markdown block. "
                 "Do NOT put mermaid diagrams inside presentation slides."
+                + lang_suffix
             )
         if "twitter" in formats or "tweet" in formats:
             instructions.append(
                 "For 'twitter' (Twitter/X Post): Output a polished, ready-to-post Twitter/X post (or a numbered thread like 1/3, 2/3, 3/3 if multiple points are covered). "
                 "Each tweet must be within ~280 characters. Use engaging hooks, emojis, and 2-4 relevant hashtags. "
                 "Structure it ready to copy and paste to Twitter/X. Do NOT format as presentation slides or use '---' slide separators."
+                + lang_suffix
             )
         if "linkedin" in formats:
             instructions.append(
                 "For 'linkedin' (LinkedIn Post): Output a compelling, professional LinkedIn post with a strong hook, concise paragraphs, bullet points, call to action, and relevant hashtags. "
                 "Format it ready to copy and paste to LinkedIn. Do NOT format as presentation slides."
+                + lang_suffix
             )
         if "pdf" in formats or "advisory" in formats or "exec_summary" in formats:
             instructions.append(
                 "For documents, structure them professionally in Markdown with clear sections."
+                + lang_suffix
             )
-        
+
     return "\n".join(instructions)
 
 async def generate_content(prompt: str, staging_data: Dict[str, Any], config: Dict[str, Any]) -> str:
@@ -113,15 +121,29 @@ async def generate_content(prompt: str, staging_data: Dict[str, Any], config: Di
     
     system_instruction = format_system_instruction(config, is_website_step_1=(is_website and not has_design_choices))
     
-    full_prompt = f"System Instructions:\n{system_instruction}\n\n"
+    language = (config.get("language") or "English").strip()
+    non_english = language and language.lower() not in ["english", "en"]
+
+    # Language banner -- appears FIRST so the model reads it before anything else
+    lang_banner = ""
+    if non_english:
+        lang_banner = (
+            f"[LANGUAGE OVERRIDE] You MUST respond entirely in {language}. "
+            f"Not a single word in English. Every slide title, bullet point, tweet, post, sentence -- all in {language} only.\n\n"
+        )
+
+    full_prompt = lang_banner + f"System Instructions:\n{system_instruction}\n\n"
     if docs_context:
         full_prompt += f"Context Documents:\n{docs_context}\n\n"
-        
+
     full_prompt += f"User Request:\n{prompt}\n"
-    
-    language = (config.get("language") or "English").strip()
-    if language and language.lower() not in ["english", "en"]:
-        full_prompt += f"\nCRITICAL: Output and format all deliverables strictly in {language}!\n"
+
+    # Repeat at end for maximum emphasis
+    if non_english:
+        full_prompt += (
+            f"\n\n[REMINDER] Output language is {language}. "
+            f"All content in your response MUST be in {language} only. No English.\n"
+        )
     
     if is_website and has_design_choices:
         full_prompt += (

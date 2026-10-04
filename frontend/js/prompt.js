@@ -24,129 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let attachedFiles = [];
   const chatSessions = [];
 
-  // --- Persistent Storage Management (localStorage) ---
-  const SESSIONS_STORAGE_KEY = 'sathyasethu_saved_chat_sessions';
-
-  function loadSavedSessions() {
-    try {
-      const raw = localStorage.getItem(SESSIONS_STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      console.warn('Failed to load saved sessions from localStorage:', e);
-      return [];
-    }
-  }
-
-  function persistSession(session) {
-    if (!session || !session.id) return;
-    try {
-      const sessions = loadSavedSessions();
-      const existingIdx = sessions.findIndex((s) => s.id === session.id);
-      if (existingIdx >= 0) {
-        sessions[existingIdx] = session;
-      } else {
-        sessions.push(session);
-      }
-
-      // Limit to 25 most recent sessions to avoid exceeding storage quota
-      const trimmed = sessions.slice(-25);
-
-      try {
-        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(trimmed));
-      } catch (quotaErr) {
-        console.warn('localStorage quota warning, stripping heavy binary payloads:', quotaErr);
-        const lightweight = trimmed.map((s, idx) => {
-          if (idx < trimmed.length - 1 && s.responseData && typeof s.responseData === 'object' && s.responseData.pptx_base64) {
-            const clone = { ...s, responseData: { ...s.responseData } };
-            delete clone.responseData.pptx_base64;
-            return clone;
-          }
-          return s;
-        });
-        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(lightweight));
-      }
-    } catch (err) {
-      console.warn('Could not persist session to localStorage:', err);
-    }
-  }
-
-  function addChatHistoryItem(chatId, promptText, isActive = true) {
-    if (!chatHistoryList) return;
-    if (isActive) {
-      chatHistoryList.querySelectorAll('.chat-item').forEach((i) => i.classList.remove('active'));
-    }
-    const chatTitle = promptText.length > 22 ? promptText.slice(0, 20) + '...' : promptText;
-    let existingItem = chatHistoryList.querySelector(`.chat-item[data-id="${chatId}"]`);
-    if (existingItem) {
-      const titleSpan = existingItem.querySelector('.item-title');
-      if (titleSpan) titleSpan.textContent = chatTitle;
-      if (isActive) existingItem.classList.add('active');
-      return;
-    }
-
-    const newLi = document.createElement('li');
-    newLi.innerHTML = `
-      <button type="button" class="chat-item ${isActive ? 'active' : ''}" data-id="${chatId}">
-        <span class="item-title">${escapeHtml(chatTitle)}</span>
-        <span class="active-arrow" aria-hidden="true">&#9668;</span>
-      </button>
-    `;
-    chatHistoryList.prepend(newLi);
-    updateClearButtonVisibility();
-  }
-
-  function updateClearButtonVisibility() {
-    const clearBtn = document.getElementById('clearHistoryBtn');
-    if (clearBtn) {
-      clearBtn.style.display = chatSessions.length > 0 ? 'inline-flex' : 'none';
-    }
-  }
-
-  function restoreSavedSessions() {
-    const saved = loadSavedSessions();
-    if (!saved || saved.length === 0) {
-      updateClearButtonVisibility();
-      return;
-    }
-
-    saved.forEach((session) => {
-      if (!session || !session.id || !session.prompt) return;
-
-      if (session.config && typeof session.responseData === 'object' && session.responseData && !session.responseData.config) {
-        session.responseData.config = session.config;
-      }
-
-      const rawContent = typeof session.responseData === 'object' && session.responseData.ai_result !== undefined
-        ? session.responseData.ai_result
-        : session.responseData;
-
-      chatSessions.push({
-        id: session.id,
-        prompt: session.prompt,
-        content: rawContent,
-        responseData: session.responseData,
-        config: session.config || (session.responseData && session.responseData.config),
-        timestamp: session.timestamp || Date.now()
-      });
-
-      createLoadingMessageGroup(session.prompt, session.id);
-      displayAiResponse(session.responseData, session.prompt, session.id, Boolean(session.isError), false);
-      addChatHistoryItem(session.id, session.prompt, false);
-    });
-
-    if (chatHistoryList) {
-      const firstBtn = chatHistoryList.querySelector('.chat-item');
-      if (firstBtn) firstBtn.classList.add('active');
-    }
-
-    updateClearButtonVisibility();
-
-    setTimeout(() => {
-      if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-    }, 80);
-  }
+  // Clear any legacy saved chat sessions from localStorage if present
+  try {
+    localStorage.removeItem('sathyasethu_saved_chat_sessions');
+  } catch (e) {}
 
   // Retrieve saved authentication and organization info
   const authPayload = localStorage.getItem('sathyasethu-auth') || sessionStorage.getItem('sathyasethu-auth');
@@ -265,29 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Clear Chat History Button Listener
-  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-  if (clearHistoryBtn) {
-    clearHistoryBtn.addEventListener('click', () => {
-      if (confirm('Clear all stored prompts and responses?')) {
-        localStorage.removeItem(SESSIONS_STORAGE_KEY);
-        chatSessions.length = 0;
-        if (chatContainer) chatContainer.innerHTML = '';
-        if (chatHistoryList) chatHistoryList.innerHTML = '';
-        updateClearButtonVisibility();
-      }
-    });
-  }
-
-  // Restore previous chat prompts and responses from localStorage
-  restoreSavedSessions();
-
-  // Check if backend has initial code from /api/give-code (only if no sessions were restored)
+  // Check if backend has initial code from /api/give-code
   fetch('/api/give-code')
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {
       const code = data?.code || data?.html;
-      if (code && code.trim() && chatSessions.length === 0) {
+      if (code && code.trim()) {
         const initialId = `chat-init-${Date.now()}`;
         createLoadingMessageGroup('Initial Workspace Draft', initialId);
         displayAiResponse({ ai_result: code }, 'Initial Workspace Draft', initialId);
@@ -1351,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Update existing message group with final AI response
-  function displayAiResponse(responseData, promptText, chatId, isError = false, shouldPersist = true) {
+  function displayAiResponse(responseData, promptText, chatId, isError = false) {
     if (!chatContainer) return;
 
     let groupWrapper = document.getElementById(`chat-group-${chatId}`);
@@ -1623,20 +1487,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       chatSessions.push(sessionObj);
     }
-
-    if (shouldPersist && !isError) {
-      persistSession({
-        id: chatId,
-        prompt: promptText,
-        responseData: responseData,
-        config: sessionConfig,
-        isError: false,
-        timestamp: Date.now()
-      });
-      addChatHistoryItem(chatId, promptText, true);
-    }
-
-    updateClearButtonVisibility();
 
     setTimeout(() => {
       chatContainer.scrollTop = chatContainer.scrollHeight;
