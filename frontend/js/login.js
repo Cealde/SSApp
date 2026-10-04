@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         email,
         username,
         user: data.user,
+        organization: data.organization || {},
         remember: rememberInput.checked,
         timestamp: new Date().toISOString(),
       };
@@ -223,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstName = document.getElementById('signupFirstName')?.value.trim() || '';
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
-    const organization = document.getElementById('signupOrganization')?.value.trim() || '';
+    let organization = document.getElementById('signupOrganization')?.value.trim().toLowerCase() || '';
     const organizationPassword = document.getElementById('signupOrganizationPassword')?.value || '';
 
     let formValid = true;
@@ -272,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ first_name: firstName, email, password, organization, organization_password: organizationPassword }),
       });
 
       const data = await response.json().catch(() => ({}));

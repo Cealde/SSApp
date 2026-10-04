@@ -5,73 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSApp</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .top-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 24px;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .org-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        .org-badge img {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            object-fit: cover;
-            border: 1px solid #e2e8f0;
-        }
-        .auth-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .auth-actions a, .auth-actions button {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-size: 14px;
-            padding: 6px 12px;
-            border-radius: 6px;
-        }
-        .auth-actions button {
-            background: #f1f5f9;
-            color: #475569;
-        }
-        .auth-actions button:hover {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-    </style>
 </head>
 <body>
 
-    <header class="top-nav">
-        <div id="org-header" class="org-badge">
-            <img id="org-icon-img" src="" alt="Org Icon" style="display: none;">
-            <span id="org-name-text">SSApp</span>
-        </div>
-        <div class="auth-actions">
-            <span id="user-greeting" style="color: #64748b; font-size: 14px;"></span>
-            <button id="logout-btn" onclick="logout()" style="display: none;">Log Out</button>
-            <a id="login-link" href="/login">Log In</a>
-        </div>
-    </header>
-
     <form id="user-form">
         <input type="text" id="text-input" placeholder="Enter text">
+
+
+
         <button type="submit">Send</button>
     </form>
 
@@ -80,41 +21,6 @@
     <div id="output"></div>
     <div id="query"></div>
 
-    <script>
-        // Load organization & user info from storage
-        document.addEventListener('DOMContentLoaded', () => {
-            const orgName = sessionStorage.getItem('org_name') || localStorage.getItem('org_name');
-            const orgIcon = sessionStorage.getItem('org_icon') || localStorage.getItem('org_icon');
-            const userEmail = localStorage.getItem('user_email');
-            const firstName = localStorage.getItem('first_name');
-            const token = localStorage.getItem('access_token');
-
-            if (token) {
-                document.getElementById('login-link').style.display = 'none';
-                document.getElementById('logout-btn').style.display = 'inline-block';
-
-                if (firstName || userEmail) {
-                    document.getElementById('user-greeting').innerText = `Hello, ${firstName || userEmail}`;
-                }
-            }
-
-            if (orgName) {
-                document.getElementById('org-name-text').innerText = orgName;
-            }
-
-            if (orgIcon) {
-                const iconImg = document.getElementById('org-icon-img');
-                iconImg.src = orgIcon;
-                iconImg.style.display = 'inline-block';
-            }
-        });
-
-        function logout() {
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.href = '/login';
-        }
-    </script>
     <script src="/js/main.js"></script>
 </body>
 </html>
