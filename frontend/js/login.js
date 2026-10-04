@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmationState.classList.remove('hidden');
     authHeading.textContent = 'Check your email';
     if (authSubtext) {
-      authSubtext.textContent = 'Account registered! You can now log in to your workspace.';
+      authSubtext.textContent = 'A confirmation link has been sent to your email. Please check your inbox and verify your email before logging in.';
     }
     footerPrompt.textContent = 'Ready to continue?';
     toggleModeButton.textContent = 'Login';
@@ -318,7 +318,16 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(msg);
       }
 
-      // Direct login: store authentication state and redirect immediately
+      // Check if email confirmation is required or token is not immediately issued
+      if (data.requires_confirmation || !data.access_token) {
+        setConfirmationState(email);
+        signUpButton.disabled = false;
+        signUpButton.classList.remove('is-loading');
+        signUpButton.querySelector('.button-label').textContent = 'Sign Up';
+        return;
+      }
+
+      // Direct login: store authentication state and redirect immediately if session token was returned
       const userObj = data.user || data.data?.user || { email, first_name: firstName };
       const orgObj = data.organization || data.data?.organization || {
         name: data.organization_name || finalOrg,
@@ -376,18 +385,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  resendEmailButton.addEventListener('click', () => {
+  resendEmailButton.addEventListener('click', async () => {
     const email = signupEmailValue || 'your@email.com';
     resendEmailButton.disabled = true;
     resendEmailButton.classList.add('is-loading');
     resendEmailButton.textContent = 'Resending...';
-    setStatus(confirmationStatus, `A confirmation notification has been sent to ${email}.`, 'success');
-
-    window.setTimeout(() => {
+    try {
+      const resp = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.detail || data.message || 'Could not resend email.');
+      }
+      setStatus(confirmationStatus, `A confirmation notification has been sent to ${email}.`, 'success');
+    } catch (err) {
+      setStatus(confirmationStatus, err.message || 'Could not resend confirmation email.', 'error');
+    } finally {
       resendEmailButton.disabled = false;
       resendEmailButton.classList.remove('is-loading');
       resendEmailButton.textContent = 'Resend email';
-    }, 1200);
+    }
   });
 
   if (openEmailButton) {

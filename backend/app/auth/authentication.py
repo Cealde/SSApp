@@ -464,26 +464,7 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         user_id = user_obj.get("id") or signup_result.get("id")
         token = signup_result.get("access_token")
 
-        # Step 3: If signup did not return an access_token, perform immediate sign-in to get active session
-        if not token:
-            try:
-                login_url = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
-                async with httpx.AsyncClient() as client:
-                    login_resp = await client.post(
-                        login_url,
-                        json={"email": email, "password": auth_data.password},
-                        headers=get_headers()
-                    )
-                    if login_resp.status_code == 200:
-                        login_data = login_resp.json()
-                        token = login_data.get("access_token")
-                        if not user_id:
-                            user_obj = login_data.get("user") or {}
-                            user_id = user_obj.get("id")
-            except Exception as e:
-                print(f"[Supabase Auth] Direct login attempt: {e}")
-
-        # Step 4: Sync to both user_details and profiles tables
+        # Step 3: Sync to user_details and profiles tables
         await _sync_user_supabase_records(user_id, email, first_name, org_name, token)
 
         # Retrieve organization icon and name
@@ -491,9 +472,17 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         org_icon = org_details.get("icon", "")
         org_name = org_details.get("name", org_name)
 
+        requires_confirmation = not bool(token)
+        msg = (
+            "Registration successful! Please check your email and click the confirmation link to activate your account."
+            if requires_confirmation
+            else "User registered and logged in successfully."
+        )
+
         return {
-            "access_token": token or f"session_{user_id or 'anon'}",
-            "token_type": "bearer",
+            "access_token": token,
+            "token_type": "bearer" if token else None,
+            "requires_confirmation": requires_confirmation,
             "user": {
                 "id": user_id,
                 "email": email,
@@ -506,7 +495,7 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             "organization_name": org_name,
             "organization_icon": org_icon,
             "icon": org_icon,
-            "message": "User registered and logged in successfully."
+            "message": msg
         }
     else:
         # Local dev fallback
@@ -519,8 +508,9 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
         org_icon = org_details.get("icon", "")
         org_name = org_details.get("name", org_name)
         return {
-            "access_token": f"dev_token_{user_id}",
-            "token_type": "bearer",
+            "access_token": None,
+            "token_type": None,
+            "requires_confirmation": True,
             "user": {
                 "id": user_id,
                 "email": email,
@@ -533,8 +523,33 @@ async def sign_up_user(auth_data: SignUpRequest) -> dict:
             "organization_name": org_name,
             "organization_icon": org_icon,
             "icon": org_icon,
-            "message": "User registered and logged in successfully."
+            "message": "Registration successful! Please check your email to confirm your account."
         }
+
+async def resend_confirmation_email(email: str) -> dict:
+    """
+    Requests Supabase to resend the email verification link to the user.
+    """
+    _check_supabase_config()
+    key = get_supabase_key()
+    cleaned_email = email.strip().lower()
+    url = f"{SUPABASE_URL}/auth/v1/resend"
+    payload = {
+        "type": "signup",
+        "email": cleaned_email
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(url, json=payload, headers=get_headers())
+
+    if resp.status_code >= 400:
+        try:
+            err = resp.json().get("msg") or resp.json().get("message") or resp.text
+        except Exception:
+            err = resp.text
+        raise HTTPException(status_code=resp.status_code, detail=err or "Failed to resend confirmation email.")
+
+    return {"message": f"Confirmation email resent to {cleaned_email}."}
+
 
 async def sign_in_user(auth_data: LoginRequest) -> dict:
     """
