@@ -1,23 +1,9 @@
-# Python bytecode & cache
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
-venv/
-.venv/
-env/
-ENV/
-
-# Environment files
 .env
-
-# IDE & Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Operating System files
-.DS_Store
-Thumbs.db
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+runtime/
