@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (typeof aiResult === 'string' && (aiResult.includes('```mermaid') || aiResult.trim().startsWith('graph ') || aiResult.trim().startsWith('flowchart '))) {
             const cleanCode = aiResult.replace(/```mermaid/g, '').replace(/```/g, '').trim();
             htmlToDisplay = `<!DOCTYPE html><html><head><meta charset="utf-8">
-              <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+              <script src="/js/mermaid.min.js"></script>
               <script>
                 document.addEventListener("DOMContentLoaded", function() {
                   try { mermaid.initialize({ startOnLoad: true, theme: "dark" }); } catch(e){}

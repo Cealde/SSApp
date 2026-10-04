@@ -16,7 +16,7 @@ def mermaid_webpage(mermaid_code, title="Diagram Preview"):
     return f'''<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{escape(title)}</title>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="/js/mermaid.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {{
     try {{
@@ -51,7 +51,7 @@ def webpage(out, settings):
         escape(', '.join(b['fact_ids']))+'</small></section>' for b in out['blocks'])
     grid='display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;' if layout=='briefing' else ''
     return f'''<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://cdn.jsdelivr.net">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
 <title>{title}</title><style>body{{margin:0;background:{p['background']};color:{p['text']};font:18px/1.7 "{bf}",sans-serif}}
 main{{max-width:{width};margin:auto;padding:48px 24px}}h1{{font-family:"{tf}",serif;font-size:clamp(32px,6vw,56px);line-height:1.15}}
 header{{border-bottom:4px solid {p['accent']};padding-bottom:24px}}article{{{grid}}}section{{padding:20px 0;border-bottom:1px solid #ccd2d7}}
