@@ -1,4 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Auto-redirect to dashboard if user is already logged in
+  const existingAuth = localStorage.getItem('sathyasethu-auth') || sessionStorage.getItem('sathyasethu-auth');
+  if (existingAuth) {
+    try {
+      const parsed = JSON.parse(existingAuth);
+      if (parsed && (parsed.token || parsed.access_token || parsed.user || parsed.organizationName || parsed.id)) {
+        window.location.href = '/dashboard';
+        return;
+      }
+    } catch (e) {
+      console.warn('Could not parse stored auth:', e);
+    }
+  }
+
   const loginForm = document.getElementById('loginForm');
   const signupForm = document.getElementById('signupForm');
   const confirmationState = document.getElementById('confirmationState');

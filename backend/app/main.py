@@ -29,7 +29,11 @@ except Exception:
 @app.get("/")
 @app.get("/index.html")
 async def serve_index():
-    return FileResponse(FRONTEND_DIR / "pages" / "index.html")
+    return FileResponse(FRONTEND_DIR / "pages" / "login.html")
+
+@app.get("/workbench")
+async def serve_workbench():
+    return FileResponse(BASE_DIR / "index.html")
 
 @app.get("/dashboard")
 @app.get("/dashboard.html")

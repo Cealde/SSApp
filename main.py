@@ -60,9 +60,10 @@ def revision(session):
 
 @app.get('/', response_class=HTMLResponse)
 def home():
+    login_file = ROOT / 'frontend' / 'pages' / 'login.html'
+    if login_file.exists():
+        return login_file.read_text(encoding='utf-8')
     index_file = ROOT / 'index.html'
-    if not index_file.exists():
-        index_file = ROOT / 'static' / 'index.html'
     return index_file.read_text(encoding='utf-8')
 
 @app.get('/api/health')

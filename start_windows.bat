@@ -25,5 +25,5 @@ if not exist .env (
 )
 echo Open http://127.0.0.1:8000 in your browser.
 echo Keep this window open. Press Ctrl+C to stop.
-.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 pause
