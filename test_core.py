@@ -103,3 +103,14 @@ def test_rest_contract():
    assert mock.call_args.kwargs['headers']['x-goog-api-key']=='private-test-secret'
    assert mock.call_args.kwargs['json']['generationConfig']['responseMimeType']=='application/json'
  finally: provider.key=old
+
+def test_give_routes():
+ with patch('backend.app.api.routes.generate_content', AsyncMock(return_value="AI Response Test")):
+  r1 = client.post('/api/give', json={'text': 'Test Prompt', 'config': {'tone': 'casual'}})
+  assert r1.status_code == 200
+  assert r1.json()['ai_result'] == "AI Response Test"
+  
+  r2 = client.post('/api/give-files', data={'text': 'Test File Prompt', 'config': '{}'}, files=[('files', ('doc.txt', b'Hello world'))])
+  assert r2.status_code == 200
+  assert r2.json()['ai_result'] == "AI Response Test"
+

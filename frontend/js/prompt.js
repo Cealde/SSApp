@@ -580,12 +580,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const isTitle = fontObj.type === 'title';
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = \`selection-pill font-btn \${isTitle ? 'title-font' : 'body-font'}\`;
-        btn.innerHTML = \`\${fontObj.name} (\${isTitle ? 'Title' : 'Body'})\`;
-        btn.style.fontFamily = \`'\${fontObj.name}', sans-serif\`;
+        btn.className = `selection-pill font-btn ${isTitle ? 'title-font' : 'body-font'}`;
+        btn.innerHTML = `${fontObj.name} (${isTitle ? 'Title' : 'Body'})`;
+        btn.style.fontFamily = `'${fontObj.name}', sans-serif`;
         
         btn.onclick = () => {
-          document.querySelectorAll(\`.\${isTitle ? 'title-font' : 'body-font'}\`).forEach(b => b.classList.remove('selected'));
+          document.querySelectorAll(`.${isTitle ? 'title-font' : 'body-font'}`).forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           if (isTitle) selectedTitleFont = fontObj.name;
           else selectedBodyFont = fontObj.name;
