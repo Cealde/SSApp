@@ -1,19 +1,601 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSApp</title>
-    <link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SatyaSethu - Next-Generation Workspace</title>
+  <meta name="description" content="SatyaSethu dark-theme glassmorphism web application interface.">
+
+  <!-- Inter typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <form id="user-form">
-        <input type="text" id="text-input" placeholder="Enter text" required>
-        <input type="file" id="file-input">
-        <button type="submit">Submit</button>
-    </form>
-    <p id="output"></p>
 
-    <script src="/js/main.js"></script>
+  <!-- The Glowing Background: 3 Large Circular Elements (Orbs) in deep warm tones with massive 120px CSS blur -->
+  <div class="glowing-background" aria-hidden="true">
+    <div class="orb orb-1-top-right"></div>
+    <div class="orb orb-2-bottom-left"></div>
+    <div class="orb orb-3-center"></div>
+  </div>
+
+  <!-- ====================================================================
+       SCREEN 1: SIGN-UP PAGE
+       ==================================================================== -->
+  <main id="screen-signup" class="app-screen active" aria-labelledby="signup-heading">
+    <div class="signup-box-wrapper">
+      <section class="glass-card signup-glass-box">
+
+        <!-- Header: Title reading "SatyaSethu" centered at the top -->
+        <div class="signup-header">
+          <h1 id="signup-heading" class="signup-title">SatyaSethu</h1>
+          <p class="signup-tagline">Access your organization workspace &amp; tools</p>
+        </div>
+
+        <!-- Stacked input fields: Email, Password, Organization, and Organization Password -->
+        <form id="signup-form" class="signup-form-stack" novalidate>
+          <div class="form-field">
+            <label for="input-email" class="form-label">Email</label>
+            <input 
+              type="email" 
+              id="input-email" 
+              name="email"
+              class="glass-input" 
+              placeholder="name@organization.com" 
+              required
+              autocomplete="email"
+            >
+          </div>
+
+          <div class="form-field">
+            <label for="input-password" class="form-label">Password</label>
+            <div class="password-input-wrapper">
+              <input 
+                type="password" 
+                id="input-password" 
+                name="password"
+                class="glass-input" 
+                placeholder="Create your secure password" 
+                required
+                autocomplete="new-password"
+              >
+              <button type="button" class="password-toggle-btn" data-target="input-password" aria-label="Toggle password visibility">
+                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="toggle-text">Show</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="input-org" class="form-label">Organization</label>
+            <input 
+              type="text" 
+              id="input-org" 
+              name="organization"
+              class="glass-input" 
+              placeholder="e.g. Acme Corp" 
+              required
+              autocomplete="organization"
+            >
+          </div>
+
+          <div class="form-field">
+            <label for="input-org-password" class="form-label">Organization Password</label>
+            <div class="password-input-wrapper">
+              <input 
+                type="password" 
+                id="input-org-password" 
+                name="org_password"
+                class="glass-input" 
+                placeholder="Enter organization access key" 
+                required
+              >
+              <button type="button" class="password-toggle-btn" data-target="input-org-password" aria-label="Toggle organization password visibility">
+                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="toggle-text">Show</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action: Full-width, vibrant orange "Sign UP" button at the bottom -->
+          <button type="submit" id="btn-submit-signup" class="btn-vibrant-signup">
+            <span>Sign UP</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </form>
+
+      </section>
+    </div>
+  </main>
+
+
+  <!-- ====================================================================
+       SCREEN 2: PROJECTS DASHBOARD
+       ==================================================================== -->
+  <main id="screen-projects-dashboard" class="app-screen" aria-label="Projects Dashboard">
+    
+    <!-- Main Header: "SatyaSethu Engine" centered at the very top -->
+    <header class="dashboard-top-brand">
+      <div class="brand-engine-heading">
+        <span>SatyaSethu Engine</span>
+        <span class="brand-engine-badge">Active</span>
+      </div>
+    </header>
+
+    <!-- Top Section (Two Columns) -->
+    <section class="projects-top-section">
+      
+      <!-- Left Welcome Card (Wide): "Good Afternoon [Username]" -->
+      <div class="glass-card welcome-card-wide">
+        <h2 class="welcome-greeting-title" id="welcome-username-display">
+          Good Afternoon, <span id="username-text">User</span>
+        </h2>
+
+        <!-- Inside card at the bottom: "New Project" button on left & prominent time on right -->
+        <div class="welcome-card-bottom">
+          <button type="button" class="btn-new-project" id="btn-create-new-project">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Project</span>
+          </button>
+
+          <!-- Prominent time display (e.g. "8:23 AM") -->
+          <div class="prominent-time-display" id="live-time-display">8:23 AM</div>
+        </div>
+      </div>
+
+      <!-- Right Org Card (Square) beside the welcome card -->
+      <div class="glass-card org-card-square">
+        <!-- Placeholder for [Organization Logo] centered -->
+        <div class="org-logo-placeholder" aria-label="Organization Logo placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <!-- "Organization name" text below it -->
+        <div class="org-name-caption" id="org-card-name">Organization Name</div>
+        <div class="org-sub-meta">Workspace Hub</div>
+      </div>
+
+    </section>
+
+    <!-- Middle Section: Centered subheading "Pick up where you left off" -->
+    <section class="projects-middle-section">
+      <h3 class="subheading-continue">Pick up where you left off</h3>
+    </section>
+
+    <!-- Projects Grid (Bottom): CSS grid of smaller square glass cards -->
+    <section class="projects-grid" id="projects-grid-container" aria-label="Recent Projects">
+      
+      <!-- Card 1 -->
+      <div class="glass-card glass-card-interactive project-item-card" data-project="news-portal">
+        <div class="project-card-top">
+          <div class="project-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
+              <path d="M18 14h-8"></path>
+              <path d="M15 18h-5"></path>
+              <path d="M10 6h8v4h-8V6Z"></path>
+            </svg>
+          </div>
+          <span class="project-status-dot" title="Active"></span>
+        </div>
+        <div class="project-title-name">ai project name</div>
+        <div class="project-card-footer">
+          <span>Edited 2h ago</span>
+          <span>v1.4</span>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="glass-card glass-card-interactive project-item-card" data-project="research-doc">
+        <div class="project-card-top">
+          <div class="project-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <span class="project-status-dot" title="Active"></span>
+        </div>
+        <div class="project-title-name">ai project name</div>
+        <div class="project-card-footer">
+          <span>Edited yesterday</span>
+          <span>v2.1</span>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glass-card glass-card-interactive project-item-card" data-project="deck-slides">
+        <div class="project-card-top">
+          <div class="project-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <span class="project-status-dot" title="Active"></span>
+        </div>
+        <div class="project-title-name">ai project name</div>
+        <div class="project-card-footer">
+          <span>Edited 3d ago</span>
+          <span>v0.8</span>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="glass-card glass-card-interactive project-item-card" data-project="weather-feed">
+        <div class="project-card-top">
+          <div class="project-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            </svg>
+          </div>
+          <span class="project-status-dot" title="Active"></span>
+        </div>
+        <div class="project-title-name">ai project name</div>
+        <div class="project-card-footer">
+          <span>Edited 5d ago</span>
+          <span>v1.0</span>
+        </div>
+      </div>
+
+      <!-- Final card in grid: large "+" symbol in center as creation button -->
+      <div class="glass-card project-item-create" id="btn-grid-create-card" role="button" tabindex="0" title="Create new project">
+        <div class="large-plus-symbol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+        <span class="create-card-caption">New Workspace</span>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ====================================================================
+       SCREEN 3: MAIN WORKSPACE (DASHBOARD WITH NAVBAR & 3-COLUMN LAYOUT)
+       ==================================================================== -->
+  <main id="screen-workspace" class="app-screen" aria-label="Main Workspace">
+    
+    <!-- ------------------------------------------------------------------
+         TOP NAVIGATION BAR (PINNED TO TOP OF WORKSPACE)
+         ------------------------------------------------------------------ -->
+    <header class="workspace-top-navbar">
+      <!-- Left side: Small brand icon/logo + inline horizontal links -->
+      <div class="navbar-left-group">
+        <div class="navbar-brand-link" id="nav-brand-home" role="button" tabindex="0" title="Return to Projects Dashboard">
+          <div class="navbar-brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <span>SatyaSethu</span>
+        </div>
+
+        <!-- Inline horizontal text links: Overview, Workspace, Activity, and Help -->
+        <ul class="navbar-inline-links">
+          <li><button type="button" class="nav-inline-item-btn" id="nav-link-overview">Overview</button></li>
+          <li><button type="button" class="nav-inline-item-btn active" id="nav-link-workspace">Workspace</button></li>
+          <li><button type="button" class="nav-inline-item-btn" id="nav-link-activity">Activity</button></li>
+          <li><button type="button" class="nav-inline-item-btn" id="nav-link-help">Help</button></li>
+        </ul>
+      </div>
+
+      <!-- Right side: Small utility icons & pill-shaped user profile indicator -->
+      <div class="navbar-right-group">
+        <!-- Notifications Icon -->
+        <button type="button" class="nav-utility-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notif-badge-dot"></span>
+        </button>
+
+        <!-- Settings Icon -->
+        <button type="button" class="nav-utility-btn" title="Workspace Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+
+        <!-- Pill-shaped user profile indicator -->
+        <div class="navbar-profile-pill" id="btn-navbar-profile" title="Signed in user profile">
+          <div class="profile-avatar-circle" id="nav-user-initial">U</div>
+          <span class="profile-name-text" id="nav-user-name">User</span>
+          <span class="profile-status-indicator"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ------------------------------------------------------------------
+         BELOW NAVBAR - 3-COLUMN CSS GRID LAYOUT
+         ------------------------------------------------------------------ -->
+    <div class="workspace-body-container">
+
+      <!-- COLUMN 1: LEFT SIDEBAR (NAVIGATION) -->
+      <aside class="workspace-left-sidebar" aria-label="Left Sidebar Navigation">
+        <nav class="glass-card nav-menu-card" aria-label="Workspace Modules">
+          <ul class="nav-menu-list">
+            <li>
+              <button type="button" class="nav-link-btn" data-nav="Chat History">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Chat History</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-link-btn" data-nav="Make pdf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span>Make pdf</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-link-btn" data-nav="Color Pallete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="13.5" cy="6.5" r=".5"></circle>
+                  <circle cx="17.5" cy="10.5" r=".5"></circle>
+                  <circle cx="8.5" cy="7.5" r=".5"></circle>
+                  <circle cx="6.5" cy="12.5" r=".5"></circle>
+                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+                </svg>
+                <span>Color Pallete</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-link-btn" data-nav="Make ppt">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <span>Make ppt</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-link-btn" data-nav="Get weather">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                </svg>
+                <span>Get weather</span>
+              </button>
+            </li>
+            <li>
+              <!-- "Make news" styled with distinct active state -->
+              <button type="button" class="nav-link-btn active-news" data-nav="Make news">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
+                  <path d="M18 14h-8"></path>
+                  <path d="M15 18h-5"></path>
+                  <path d="M10 6h8v4h-8V6Z"></path>
+                </svg>
+                <span>Make news</span>
+                <span class="active-indicator-dot" aria-label="Active indicator"></span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- COLUMN 2: MAIN CONTENT AREA (CENTER WORKSPACE) -->
+      <section class="glass-card workspace-center-area" aria-label="Center Workspace">
+        
+        <!-- Scrollable Feed: Chat messages and Generated Preview Card -->
+        <div class="workspace-chat-feed" id="chat-feed-stream">
+
+          <!-- User Message: Align right. Modern chat bubble -->
+          <div class="chat-row-user">
+            <div class="chat-bubble-user">
+              Make a webpage for news and thing
+            </div>
+          </div>
+
+          <!-- System Response: Align left. With "SS ENGINE" badge -->
+          <div class="chat-row-system">
+            <div class="system-badge-meta">
+              <span class="badge-ss-engine">SS ENGINE</span>
+            </div>
+            <p class="system-text-line">
+              Sure here is the news webpage made after your color pallete and font choices
+            </p>
+
+            <!-- Generated Preview Card: Large nested glassmorphism card -->
+            <div class="generated-preview-card">
+              
+              <!-- Top header: "Daily News" on left, "Organization Name" + circular avatar on right -->
+              <header class="preview-card-header">
+                <div class="preview-brand-news">Daily News</div>
+                <div class="preview-org-meta">
+                  <span class="preview-org-name" id="preview-org-name-text">Organization Name</span>
+                  <div class="avatar-circle-placeholder" aria-label="Organization avatar placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                </div>
+              </header>
+
+              <!-- Body: bold headline, large rectangular image placeholder with soft corners, two lines of caption text -->
+              <div class="preview-card-body">
+                <h3 class="preview-headline">
+                  Breakthrough in Autonomous Systems &amp; Neural Knowledge Networks
+                </h3>
+
+                <!-- Large rectangular placeholder for an image with soft corners -->
+                <div class="image-placeholder-rect" role="img" aria-label="Generated article image placeholder">
+                  <div class="image-icon-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                  </div>
+                  <span class="image-box-text">Article Image Placeholder (1200 x 600)</span>
+                </div>
+
+                <!-- Two lines of caption text below it -->
+                <div class="preview-caption-lines">
+                  <p class="caption-line">
+                    Synthesized multi-source reporting: distributed computational clusters deploy real-time intelligence feeds across global communication nodes.
+                  </p>
+                  <p class="caption-line">
+                    Editorial styling dynamically harmonized with your organization's custom color palette, responsive glassmorphism hierarchy, and typography.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input Area (Bottom Center): Pinned to the bottom of the main content column -->
+        <div class="workspace-bottom-input-pinned">
+          <form id="workspace-pinned-form" class="input-bar-container">
+            <input 
+              type="text" 
+              id="workspace-query-input" 
+              class="wide-query-input" 
+              placeholder="What should we do today"
+              autocomplete="off"
+            >
+            <button type="submit" class="btn-square-plus" id="btn-workspace-submit" title="Send or add action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- COLUMN 3: RIGHT SIDEBAR (TOOLBOX) -->
+      <aside class="workspace-right-sidebar" aria-label="Right Sidebar Toolbox">
+        <div class="glass-card toolbox-card">
+          
+          <!-- Glass card with the heading "Toolbox" -->
+          <div class="toolbox-heading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+            <span>Toolbox</span>
+          </div>
+
+          <!-- Vertical stack of uniform buttons/pills: "PPT", "Webpage", "Diagram", "Subtitle", "Document", and "Story" -->
+          <div class="toolbox-pills-list">
+            <button type="button" class="toolbox-pill" data-tool="PPT">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <span>PPT</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+
+            <button type="button" class="toolbox-pill" data-tool="Webpage">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span>Webpage</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+
+            <button type="button" class="toolbox-pill" data-tool="Diagram">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="6" height="6" rx="1"></rect>
+                  <rect x="15" y="15" width="6" height="6" rx="1"></rect>
+                  <path d="M9 6h6v9"></path>
+                </svg>
+                <span>Diagram</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+
+            <button type="button" class="toolbox-pill" data-tool="Subtitle">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M7 15h4M15 15h2M7 11h2M13 11h4"></path>
+                </svg>
+                <span>Subtitle</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+
+            <button type="button" class="toolbox-pill" data-tool="Document">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span>Document</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+
+            <button type="button" class="toolbox-pill" data-tool="Story">
+              <div class="toolbox-pill-inner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Story</span>
+              </div>
+              <span class="pill-chevron">&rarr;</span>
+            </button>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Interactive JavaScript logic -->
+  <script src="/js/main.js"></script>
 </body>
 </html>
