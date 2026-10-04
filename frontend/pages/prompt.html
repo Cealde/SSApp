@@ -23,21 +23,21 @@
     <!-- Left Navigation & Sidebar -->
     <aside class="left-sidebar">
       <div class="brand-section">
-        <!-- Icon is an img with NO border around it -->
+        <!-- 1. Icon (constant size regardless of its dimensions as an image) -->
         <div class="brand-icon-wrapper" id="brandIconWrapper">
           <img src="" alt="" class="brand-icon-img" id="brandIconImg" style="display:none;" />
         </div>
-        
-        <!-- Dashboard Button -->
+
+        <!-- 2. Organization Name under the icon -->
+        <div class="brand-text-wrapper" id="brandTextWrapper">
+          <span class="brand-text" id="brandText"></span>
+        </div>
+
+        <!-- 3. Dashboard Button under the organization name -->
         <a href="/dashboard" class="dashboard-btn" id="dashboardBtn">
           <span class="btn-arrow">◀</span>
           <span>Dashboard</span>
         </a>
-
-        <!-- Empty text slot below icon and dashboard -->
-        <div class="brand-text-wrapper" id="brandTextWrapper">
-          <span class="brand-text" id="brandText"></span>
-        </div>
       </div>
 
       <!-- Chat History Panel (pure text clickable items, no borders) -->
@@ -56,11 +56,12 @@
         <!-- Messages will be appended here dynamically -->
       </section>
 
-      <!-- Interactive AI Selection Area (Hidden by default) -->
-      <div class="ai-selection-area" id="aiSelectionArea" style="display: none; margin: 0 20px 20px 20px; z-index: 10;">
-        <div id="paletteDisplay" class="selection-grid"></div>
-        <div id="fontDisplay" class="selection-grid"></div>
-        <button type="button" id="confirmSelectionBtn" class="dashboard-btn" style="margin-top: 14px; display: none;">Confirm Selection</button>
+      <!-- Interactive AI Selection Area (Hidden by default, attached to response window dynamically) -->
+      <div class="ai-selection-area" id="aiSelectionArea" style="display: none; margin: 0 0 16px 0; z-index: 10;">
+        <div class="selection-title">Choose Website Style</div>
+        <div id="paletteDisplay"></div>
+        <div id="fontDisplay"></div>
+        <button type="button" id="confirmSelectionBtn" class="dashboard-btn" style="margin-top: 12px; display: none; background: #e2a221; color: #0a0907; font-weight: 700;">Confirm Selection</button>
       </div>
 
       <!-- Bottom Prompt & File Upload Area (stuck to bottom, no border) -->

@@ -1214,13 +1214,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if website interactive selection step is returned
         if (aiResult && typeof aiResult === 'object' && aiResult.palettes && aiResult.fonts) {
           setGeneratingState(false);
+          const currentGroupWrapper = document.getElementById(`chat-group-${chatId}`);
           window.createButtonFunction(aiResult, async (selectedChoices) => {
             const nextConfig = { ...configData, ...selectedChoices };
-            const followUpChatId = `chat-${Date.now()}`;
-            createLoadingMessageGroup(`${promptText} (Website)`, followUpChatId);
+
+            if (currentGroupWrapper) {
+              const iframe = currentGroupWrapper.querySelector('.preview-iframe');
+              if (iframe) {
+                iframe.srcdoc = `<!DOCTYPE html><html><head>
+                  <meta charset="utf-8">
+                  <link rel="preconnect" href="https://fonts.googleapis.com">
+                  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap" rel="stylesheet">
+                </head><body style="background:#110e08;color:#e2a221;font-family:'DM Sans',sans-serif;padding:32px;display:flex;align-items:center;gap:14px;box-sizing:border-box;margin:0;">
+                  <style>
+                    .spinner { width:22px; height:22px; border:3px solid rgba(226,162,33,0.3); border-top-color:#e2a221; border-radius:50%; animation:spin 0.8s linear infinite; flex-shrink:0; }
+                    @keyframes spin { to { transform:rotate(360deg); } }
+                  </style>
+                  <div class="spinner"></div>
+                  <span style="font-size:15px;letter-spacing:0.02em;color:#fbf7ee;">Generating deliverables with chosen style... Please wait...</span>
+                </body></html>`;
+              }
+              const iframeWrapper = currentGroupWrapper.querySelector('.iframe-wrapper');
+              if (iframeWrapper) iframeWrapper.style.display = 'block';
+            }
 
             activeAbortController = new AbortController();
-            setGeneratingState(true, followUpChatId);
+            setGeneratingState(true, chatId);
 
             try {
               let followUpRes;
@@ -1248,11 +1268,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(followUpData.detail || 'Failed to generate deliverables');
               }
 
-              displayAiResponse(followUpData, `${promptText} (Deliverables)`, followUpChatId);
+              displayAiResponse(followUpData, promptText, chatId);
 
               chatSessions.push({
-                id: followUpChatId,
-                prompt: `${promptText} (Deliverables)`,
+                id: chatId,
+                prompt: promptText,
                 content: followUpData.ai_result,
               });
 
@@ -1260,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatHistoryList.querySelectorAll('.chat-item').forEach((i) => i.classList.remove('active'));
                 const newLi = document.createElement('li');
                 newLi.innerHTML = `
-                  <button type="button" class="chat-item active" data-id="${followUpChatId}">
+                  <button type="button" class="chat-item active" data-id="${chatId}">
                     <span class="item-title">${escapeHtml(promptText.slice(0, 22))}...</span>
                     <span class="active-arrow" aria-hidden="true">&#9668;</span>
                   </button>
@@ -1269,13 +1289,13 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             } catch (followUpErr) {
               if (followUpErr.name !== 'AbortError') {
-                displayAiResponse(followUpErr.message, promptText, followUpChatId, true);
+                displayAiResponse(followUpErr.message, promptText, chatId, true);
               }
             } finally {
               setGeneratingState(false);
               activeAbortController = null;
             }
-          });
+          }, currentGroupWrapper);
           return;
         }
 
@@ -1322,7 +1342,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const sw = document.createElement('div');
       sw.className = 'sw';
       sw.style.backgroundColor = color;
-      sw.textContent = color.toUpperCase();
+      sw.title = color.toUpperCase();
+      if (colors.length <= 3) {
+        sw.textContent = color.toUpperCase();
+      }
       palleteContainer.appendChild(sw);
     });
 
@@ -1347,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     link.href = fontLink;
     document.head.appendChild(link);
 
-    fontContainer.textContent = `${fontName} (${fontType === 'title' ? 'Title' : 'Body'})`;
+    fontContainer.textContent = fontName;
     link.onload = () => {
       fontContainer.style.fontFamily = `"${fontName}", sans-serif`;
     };
@@ -1362,37 +1385,67 @@ document.addEventListener('DOMContentLoaded', () => {
     return fontContainer;
   };
 
-  window.createButtonFunction = function (options, callback) {
+  window.createButtonFunction = function (options, callback, targetGroupWrapper) {
     if (!aiSelectionArea || !paletteDisplay || !fontDisplay || !confirmSelectionBtn) return;
 
-    paletteDisplay.innerHTML = '';
-    fontDisplay.innerHTML = '';
+    if (targetGroupWrapper) {
+      const iframeWrapper = targetGroupWrapper.querySelector('.iframe-wrapper');
+      if (iframeWrapper) iframeWrapper.style.display = 'none';
+      targetGroupWrapper.appendChild(aiSelectionArea);
+    }
+
     aiSelectionArea.style.display = 'block';
+    paletteDisplay.innerHTML = '<div class="selection-subtitle">Color Palette (Pick 1)</div>';
+    fontDisplay.innerHTML = '';
+    confirmSelectionBtn.style.display = 'none';
 
     let selectedPalette = null;
     let selectedBodyFont = null;
     let selectedTitleFont = null;
 
-    // Build color palettes using window.createColorpalette
+    // Build color palettes
     if (options.palettes && Array.isArray(options.palettes)) {
+      const paletteList = document.createElement('div');
+      paletteList.className = 'selection-grid';
       options.palettes.forEach((palette) => {
-        window.createColorpalette(palette, paletteDisplay, (chosen) => {
+        window.createColorpalette(palette, paletteList, (chosen) => {
           selectedPalette = chosen;
           checkSelections();
         });
       });
+      paletteDisplay.appendChild(paletteList);
     }
 
-    // Build font preview boxes using window.createFontBox
+    // Build font preview boxes into 2 neat rows: Title Fonts & Body Fonts
     if (options.fonts && Array.isArray(options.fonts)) {
+      const fontWrapper = document.createElement('div');
+      fontWrapper.className = 'font-sections-wrapper';
+
+      const titleSection = document.createElement('div');
+      titleSection.innerHTML = '<div class="selection-subtitle">Title Font (Pick 1)</div>';
+      const titleRow = document.createElement('div');
+      titleRow.className = 'font-options-row title-fonts-row';
+      titleSection.appendChild(titleRow);
+
+      const bodySection = document.createElement('div');
+      bodySection.innerHTML = '<div class="selection-subtitle">Body Font (Pick 1)</div>';
+      const bodyRow = document.createElement('div');
+      bodyRow.className = 'font-options-row body-fonts-row';
+      bodySection.appendChild(bodyRow);
+
       options.fonts.forEach((fontObj) => {
         const isTitle = fontObj.type === 'title';
-        window.createFontBox(fontObj.name, fontObj.type || 'body', fontDisplay, (chosen) => {
+        const targetRow = isTitle ? titleRow : bodyRow;
+        window.createFontBox(fontObj.name, fontObj.type || 'body', targetRow, (chosen) => {
           if (isTitle) selectedTitleFont = chosen;
           else selectedBodyFont = chosen;
           checkSelections();
         });
       });
+
+      fontWrapper.appendChild(titleSection);
+      fontWrapper.appendChild(bodySection);
+      fontDisplay.appendChild(fontWrapper);
     }
 
     function checkSelections() {
@@ -1403,6 +1456,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     confirmSelectionBtn.onclick = () => {
       aiSelectionArea.style.display = 'none';
+      if (targetGroupWrapper) {
+        const iframeWrapper = targetGroupWrapper.querySelector('.iframe-wrapper');
+        if (iframeWrapper) iframeWrapper.style.display = 'block';
+      }
       if (callback) {
         callback({
           palette: selectedPalette,
