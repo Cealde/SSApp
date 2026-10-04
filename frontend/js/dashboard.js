@@ -1,133 +1,103 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Retrieve saved authentication if present (login check disabled for preview)
   const authPayload = localStorage.getItem('sathyasethu-auth') || sessionStorage.getItem('sathyasethu-auth');
-
-  if (!authPayload) {
-    window.location.href = '/login';
-    return;
+  let parsedAuth = null;
+  if (authPayload) {
+    try {
+      parsedAuth = JSON.parse(authPayload);
+    } catch (e) {
+      console.warn('Could not parse auth payload:', e);
+    }
   }
+
+  // 1. Dynamic Greeting based on time
+  const greetingTimeWord = document.getElementById('greetingTimeWord');
+  const greetingUserName = document.getElementById('greetingUserName');
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  let timeWord = 'Good Morning';
+  if (currentHour >= 12 && currentHour < 17) {
+    timeWord = 'Good Afternoon';
+  } else if (currentHour >= 17 || currentHour < 5) {
+    timeWord = 'Good Evening';
+  }
+
+  if (greetingTimeWord) {
+    greetingTimeWord.textContent = timeWord;
+  }
+
+  // Extract user name without using 'Alex' placeholder
+  const rawUsername = parsedAuth?.username || parsedAuth?.name || localStorage.getItem('username') || (parsedAuth?.email ? parsedAuth.email.split('@')[0] : '');
+  const username = (rawUsername || '').trim();
+  if (greetingUserName) {
+    greetingUserName.textContent = username ? username : '';
+  }
+
+  // 2. Corner Clock (e.g., 8:23 AM)
+  const cornerClock = document.getElementById('cornerClock');
+  function updateClock() {
+    if (!cornerClock) return;
+    const d = new Date();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    cornerClock.textContent = `${hours}:${minutes} ${ampm}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // 3. Organization Info from Local Storage
+  const orgName = localStorage.getItem('organizationName') ||
+                  localStorage.getItem('organization-name') ||
+                  parsedAuth?.organization ||
+                  'Unincorporated';
+
+  const orgIconUrl = localStorage.getItem('organizationIcon') ||
+                     localStorage.getItem('organization-icon') ||
+                     parsedAuth?.organizationIcon ||
+                     '';
+
+  const orgNameText = document.getElementById('orgNameText');
+  if (orgNameText) {
+    orgNameText.textContent = orgName;
+  }
+
+  const orgLogoImg = document.getElementById('orgLogoImg');
+  const orgLogoPlaceholder = document.getElementById('orgLogoPlaceholder');
+
+  if (orgIconUrl && orgLogoImg) {
+    orgLogoImg.src = orgIconUrl;
+    orgLogoImg.style.display = 'block';
+    if (orgLogoPlaceholder) orgLogoPlaceholder.style.display = 'none';
+
+    orgLogoImg.onerror = () => {
+      orgLogoImg.style.display = 'none';
+      if (orgLogoPlaceholder) orgLogoPlaceholder.style.display = 'flex';
+    };
+  } else {
+    if (orgLogoImg) orgLogoImg.style.display = 'none';
+    if (orgLogoPlaceholder) orgLogoPlaceholder.style.display = 'flex';
+  }
+
+  // 4. Projects: Left empty for now (except for the plus card in HTML)
+  // If projects are stored later in localStorage under 'projects', render them before the plus card
+  const projectsGrid = document.getElementById('projectsGrid');
+  const addProjectCard = projectsGrid?.querySelector('.add-project-card');
 
   try {
-    const parsedAuth = JSON.parse(authPayload);
-    const currentName = document.getElementById('currentUserName');
-    const heroName = document.getElementById('hero-name');
-    const profileName = document.getElementById('profile-name');
-    const username = (parsedAuth.username || parsedAuth.email?.split('@')[0] || 'SathyaSethu User').trim();
-
-    if (currentName) currentName.textContent = username;
-    if (heroName) heroName.textContent = username;
-    if (profileName) profileName.textContent = username;
-  } catch (error) {
-    console.error('Invalid auth payload:', error);
-  }
-
-  const form = document.getElementById('user-form');
-  const input = document.getElementById('text-input');
-  const output = document.getElementById('output');
-  const fileInput = document.getElementById('file-input');
-  const submitButton = form?.querySelector('.submit-button');
-  const mobileMenuButton = document.querySelector('.mobile-menu');
-  const nav = document.querySelector('.main-nav');
-  const toastContainer = document.querySelector('.toast-container');
-
-  const showToast = (message, variant = 'success') => {
-    if (!toastContainer) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${variant}`;
-    toast.textContent = message;
-    toastContainer.appendChild(toast);
-
-    window.setTimeout(() => {
-      toast.remove();
-    }, 2600);
-  };
-
-  const setLoadingState = (isLoading) => {
-    if (!submitButton) return;
-    submitButton.disabled = isLoading;
-    submitButton.classList.toggle('is-loading', isLoading);
-    submitButton.textContent = isLoading ? 'Running...' : 'Run workflow';
-  };
-
-  if (mobileMenuButton && nav) {
-    mobileMenuButton.addEventListener('click', () => {
-      nav.classList.toggle('is-open');
-    });
-  }
-
-  if (fileInput) {
-    fileInput.addEventListener('change', () => {
-      const fileName = fileInput.files?.[0]?.name ?? 'No file selected';
-      const pickerLabel = fileInput.closest('.file-picker')?.querySelector('span');
-
-      if (pickerLabel) {
-        pickerLabel.textContent = fileName.length > 28 ? `${fileName.slice(0, 25)}...` : fileName;
-      }
-    });
-  }
-
-  if (form) {
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const text = input ? input.value.trim() : '';
-
-      if (!text) {
-        if (output) {
-          output.textContent = 'Please enter some text before submitting.';
-          output.classList.add('error');
-          output.classList.remove('success');
-        }
-        showToast('Please enter some text.', 'error');
-        return;
-      }
-
-      setLoadingState(true);
-      if (output) {
-        output.textContent = 'Sending request to SathyaSethu backend...';
-        output.classList.remove('error', 'success');
-      }
-
-      try {
-        const response = await fetch('/api/give', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text }),
-        });
-
-        const data = await response.json().catch(() => ({ message: 'Request processed successfully.' }));
-
-        if (!response.ok) {
-          throw new Error(data.detail || 'The service was unable to process the request.');
-        }
-
-        if (output) {
-          output.textContent = data.message || 'Request processed successfully.';
-          output.classList.add('success');
-          output.classList.remove('error');
-        }
-        showToast('Request completed successfully.', 'success');
-        form.reset();
-
-        if (fileInput) {
-          const pickerLabel = fileInput.closest('.file-picker')?.querySelector('span');
-          if (pickerLabel) {
-            pickerLabel.textContent = 'Attach file';
-          }
-        }
-      } catch (error) {
-        if (output) {
-          output.textContent = 'Unable to reach the backend server. Please try again.';
-          output.classList.add('error');
-          output.classList.remove('success');
-        }
-        showToast(error.message || 'Request failed.', 'error');
-        console.error('SathyaSethu request error:', error);
-      } finally {
-        setLoadingState(false);
-      }
-    });
+    const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    if (Array.isArray(savedProjects) && savedProjects.length > 0 && projectsGrid && addProjectCard) {
+      savedProjects.forEach(proj => {
+        const card = document.createElement('a');
+        card.href = proj.url || '/prompt.html';
+        card.className = 'bento-card project-item-card';
+        card.innerHTML = `<span class="project-item-name">${proj.name || 'AI Project'}</span>`;
+        projectsGrid.insertBefore(card, addProjectCard);
+      });
+    }
+  } catch (err) {
+    console.warn('Error reading projects:', err);
   }
 });

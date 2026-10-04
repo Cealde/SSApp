@@ -1,24 +1,21 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap");
 
 :root {
-  --bg-0: #090909;
-  --bg-1: #140707;
-  --bg-2: #1a0b0b;
-  --panel: rgba(24, 10, 10, 0.72);
-  --panel-strong: rgba(15, 7, 7, 0.85);
-  --panel-soft: rgba(23, 12, 12, 0.5);
-  --line: rgba(255, 87, 87, 0.17);
-  --line-strong: rgba(255, 87, 87, 0.35);
-  --text: #fff5f5;
-  --muted: #e6b0b0;
-  --muted-strong: #ffd8d8;
-  --accent: #d4101a;
-  --accent-alt: #ff5a5f;
-  --accent-soft: rgba(212, 16, 26, 0.2);
-  --danger: #ff6b6b;
-  --success: #4ade80;
+  --bg-0: #0a0907;
+  --bg-1: #14110b;
+  --bg-2: #1b160e;
+  --panel: rgba(26, 21, 14, 0.72);
+  --panel-strong: rgba(20, 16, 11, 0.88);
+  --panel-soft: rgba(30, 24, 16, 0.5);
+  --line: transparent;
+  --text: #fbf7ee;
+  --muted: #dfd4c0;
+  --muted-strong: #fff1d8;
+  --accent: #e2a221;
+  --accent-alt: #f5b73d;
+  --accent-soft: rgba(226, 162, 33, 0.18);
   --shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
-  --button-shadow: 0 12px 24px rgba(212, 16, 26, 0.28);
+  --button-shadow: 0 12px 24px rgba(226, 162, 33, 0.28);
   --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-title: "Momo Trust Display", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -27,21 +24,23 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  border: none;
+  outline: none;
 }
 
 html, body {
   height: 100%;
   width: 100%;
   background:
-    radial-gradient(circle at top left, rgba(212, 16, 26, 0.24), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(255, 90, 95, 0.18), transparent 24%),
+    radial-gradient(circle at top left, rgba(226, 162, 33, 0.22), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(245, 183, 61, 0.16), transparent 26%),
     linear-gradient(135deg, var(--bg-0), var(--bg-1) 38%, var(--bg-2));
   color: var(--text);
   font-family: var(--font-body);
   overflow: hidden;
 }
 
-/* Ambient glow accents like login */
+/* Ambient glow */
 .ambient {
   position: fixed;
   border-radius: 50%;
@@ -52,17 +51,17 @@ html, body {
 }
 
 .ambient-one {
-  width: 420px;
-  height: 420px;
-  background: rgba(212, 16, 26, 0.2);
+  width: 440px;
+  height: 440px;
+  background: rgba(226, 162, 33, 0.2);
   top: 0;
   left: 0;
 }
 
 .ambient-two {
-  width: 480px;
-  height: 480px;
-  background: rgba(255, 90, 95, 0.15);
+  width: 500px;
+  height: 500px;
+  background: rgba(245, 183, 61, 0.14);
   right: 0;
   bottom: 0;
 }
@@ -94,11 +93,13 @@ html, body {
   gap: 6px;
 }
 
-/* Icon image slot with no border around it */
+/* Icon image slot with NO border */
 .brand-icon-wrapper {
   display: flex;
   align-items: center;
   margin-bottom: 2px;
+  border: none;
+  background: transparent;
 }
 
 .brand-icon-img {
@@ -110,14 +111,14 @@ html, body {
   background: transparent;
 }
 
-/* Dashboard Button styled like login interactive elements */
+/* Dashboard Button - NO borders */
 .dashboard-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 9px 16px;
   background: var(--panel-strong);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 12px;
   color: var(--text);
   text-decoration: none;
@@ -126,24 +127,26 @@ html, body {
   cursor: pointer;
   transition: all 200ms ease;
   width: fit-content;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .dashboard-btn:hover {
   background: var(--accent-soft);
-  border-color: var(--accent-alt);
+  color: #fff;
   transform: translateY(-1px);
 }
 
 .dashboard-btn .btn-arrow {
   font-size: 0.85rem;
-  color: var(--accent-alt);
+  color: var(--accent);
 }
 
 /* Empty text slot below dashboard */
 .brand-text-wrapper {
   min-height: 18px;
+  border: none;
 }
 
 .brand-text {
@@ -153,11 +156,11 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-/* Chat History Panel matching login panel theme */
+/* Chat History Panel - NO border */
 .chat-history-panel {
   flex: 1;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 20px;
   padding: 18px 14px;
   display: flex;
@@ -170,7 +173,7 @@ html, body {
 
 .sidebar-title {
   font-family: var(--font-title);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 14px;
@@ -187,7 +190,7 @@ html, body {
   flex: 1;
 }
 
-/* Chat items are pure clickable text without box frames */
+/* Chat items: pure clickable text without box frames or borders */
 .chat-item {
   display: flex;
   align-items: center;
@@ -207,7 +210,7 @@ html, body {
 
 .chat-item:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .chat-item .item-title {
@@ -220,7 +223,7 @@ html, body {
 .chat-item .active-arrow {
   display: none;
   font-size: 0.9rem;
-  color: var(--accent-alt);
+  color: var(--accent);
   margin-left: 8px;
   flex-shrink: 0;
 }
@@ -234,30 +237,21 @@ html, body {
   display: inline-block;
 }
 
-/* Empty state message for chat history */
-.empty-chat-history {
-  padding: 12px 8px;
-  font-size: 0.85rem;
-  color: var(--muted);
-  opacity: 0.6;
-  font-style: italic;
-}
-
 /* Main Area */
 .main-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   height: 100%;
   min-width: 0;
+  position: relative;
 }
 
-/* Chat Container */
+/* Chat Container: fills remaining height, leaves space for prompt stuck at bottom */
 .chat-container {
   flex: 1;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 24px;
   padding: 22px;
   overflow-y: auto;
@@ -267,9 +261,10 @@ html, body {
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  margin-bottom: 14px;
 }
 
-/* User Message Bubble */
+/* User Message Bubble - NO borders */
 .user-message-row {
   display: flex;
   justify-content: flex-end;
@@ -277,64 +272,27 @@ html, body {
 
 .user-bubble {
   background: var(--accent-soft);
-  border: 1px solid var(--line-strong);
+  border: none;
   color: var(--text);
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: 18px 18px 4px 18px;
   max-width: 75%;
-  font-size: 0.95rem;
+  font-size: 0.96rem;
   line-height: 1.45;
   word-break: break-word;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* AI Response Card */
-.ai-response-card {
-  background: var(--panel-strong);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  box-shadow: inset 0 0 35px 10px rgba(8, 3, 3, 0.6);
-}
-
-.ai-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.ai-text {
-  font-size: 0.95rem;
-  color: var(--text);
-  line-height: 1.45;
-  font-weight: 500;
-}
-
-.engine-badge {
-  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 8px;
-  white-space: nowrap;
-  box-shadow: var(--button-shadow);
-}
-
-/* Iframe Container */
+/* Iframe Container - NO response box wrapper, NO borders */
 .iframe-wrapper {
   width: 100%;
-  height: 520px;
-  border-radius: 14px;
+  height: 540px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  background: #090505;
+  border: none;
+  background: #110e08;
   position: relative;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.7);
 }
 
 .preview-iframe {
@@ -344,25 +302,27 @@ html, body {
   display: block;
 }
 
-/* Bottom Prompt & Input Box - made taller as requested */
+/* Bottom Prompt & Input Box - stuck to bottom, taller, NO borders */
 .prompt-box-form {
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
+  background: var(--panel-strong);
+  border: none;
   border-radius: 20px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   display: flex;
   align-items: flex-end;
   gap: 14px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  min-height: 84px;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  min-height: 90px;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .prompt-box-form:focus-within {
-  border-color: rgba(212, 16, 26, 0.85);
-  box-shadow: 0 0 0 3px rgba(212, 16, 26, 0.18), var(--shadow);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--accent-soft);
 }
 
 .input-container {
@@ -374,21 +334,21 @@ html, body {
 
 .prompt-textarea {
   width: 100%;
-  min-height: 60px;
+  min-height: 64px;
   max-height: 160px;
   background: transparent;
   border: none;
   outline: none;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.98rem;
+  font-size: 1rem;
   line-height: 1.5;
   resize: none;
   padding: 4px 0;
 }
 
 .prompt-textarea::placeholder {
-  color: rgba(230, 176, 176, 0.45);
+  color: rgba(223, 212, 192, 0.45);
 }
 
 .attached-files-list {
@@ -399,10 +359,10 @@ html, body {
 
 .file-chip {
   background: var(--accent-soft);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 8px;
-  padding: 4px 9px;
-  font-size: 0.8rem;
+  padding: 5px 10px;
+  font-size: 0.82rem;
   color: var(--muted-strong);
   display: inline-flex;
   align-items: center;
@@ -411,13 +371,13 @@ html, body {
 
 .file-chip .remove-file {
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--muted);
   line-height: 1;
 }
 
 .file-chip .remove-file:hover {
-  color: var(--accent-alt);
+  color: var(--accent);
 }
 
 /* Prompt Action Buttons */
@@ -431,9 +391,9 @@ html, body {
 .file-upload-btn {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -446,7 +406,6 @@ html, body {
 .file-upload-btn:hover {
   background: var(--accent-soft);
   color: var(--text);
-  border-color: var(--accent-alt);
 }
 
 .file-upload-btn input[type="file"] {
@@ -464,21 +423,26 @@ html, body {
   object-fit: contain;
   display: block;
   pointer-events: none;
+  filter: brightness(0) saturate(100%) invert(88%) sepia(50%) saturate(600%) hue-rotate(345deg);
 }
 
 .submit-prompt-btn {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-  color: #fff;
+  color: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 200ms ease;
   box-shadow: var(--button-shadow);
+}
+
+.submit-prompt-btn .action-icon-img {
+  filter: brightness(0) saturate(100%);
 }
 
 .submit-prompt-btn:hover {
@@ -507,12 +471,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 87, 87, 0.2);
+  background: rgba(226, 162, 33, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 87, 87, 0.4);
+  background: rgba(226, 162, 33, 0.4);
 }
 
 /* Responsiveness */

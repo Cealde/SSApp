@@ -5,10 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('fileInput');
   const attachedFilesList = document.getElementById('attachedFilesList');
   const contentIframe = document.getElementById('contentIframe');
+  const iframeWrapper = document.getElementById('iframeWrapper');
   const userMessageRow = document.getElementById('userMessageRow');
   const userMessageText = document.getElementById('userMessageText');
-  const aiResponseCard = document.getElementById('aiResponseCard');
-  const aiStatusText = document.getElementById('aiStatusText');
   const submitBtn = document.getElementById('submitBtn');
   const brandIconImg = document.getElementById('brandIconImg');
 
@@ -31,18 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((data) => {
       const code = data?.code || data?.html;
       if (code && code.trim()) {
-        displayAiResponse('Loaded generated workspace output', code);
+        displayAiResponse(code);
       }
     })
     .catch(() => {});
 
-  // Function to show AI card and iframe
-  function displayAiResponse(statusMessage, htmlContent) {
-    if (aiResponseCard) {
-      aiResponseCard.style.display = 'flex';
-    }
-    if (aiStatusText) {
-      aiStatusText.textContent = statusMessage;
+  // Function to show iframe directly without response box
+  function displayAiResponse(htmlContent) {
+    if (iframeWrapper) {
+      iframeWrapper.style.display = 'block';
     }
     if (contentIframe) {
       contentIframe.srcdoc = htmlContent;
@@ -68,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
           userMessageText.textContent = targetSession.prompt;
           userMessageRow.style.display = 'flex';
         }
-        displayAiResponse(targetSession.statusMessage, targetSession.htmlContent);
+        displayAiResponse(targetSession.htmlContent);
       }
     });
   }
@@ -139,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userMessageRow.style.display = 'flex';
       }
 
-      displayAiResponse('Processing request with SS Engine...', '');
       submitBtn.disabled = true;
 
       try {
@@ -172,27 +167,27 @@ document.addEventListener('DOMContentLoaded', () => {
             htmlToDisplay = aiResult;
           } else {
             htmlToDisplay = `
-              <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
+              <!DOCTYPE html><html><body style="background:#110e08;color:#fbf7ee;font-family:sans-serif;padding:24px;">
                 <pre style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${typeof aiResult === 'object' ? JSON.stringify(aiResult, null, 2) : aiResult}</pre>
               </body></html>
             `;
           }
         } else if (data.final_output) {
           htmlToDisplay = `
-            <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
-              <h3 style="color:#ff5a5f;margin-bottom:12px;">Staged File Content</h3>
+            <!DOCTYPE html><html><body style="background:#110e08;color:#fbf7ee;font-family:sans-serif;padding:24px;">
+              <h3 style="color:#e2a221;margin-bottom:12px;">Staged File Content</h3>
               <pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;">${JSON.stringify(data.final_output, null, 2)}</pre>
             </body></html>
           `;
         } else {
           htmlToDisplay = `
-            <!DOCTYPE html><html><body style="background:#120909;color:#fff;font-family:sans-serif;padding:24px;">
+            <!DOCTYPE html><html><body style="background:#110e08;color:#fbf7ee;font-family:sans-serif;padding:24px;">
               <p style="font-size:16px;">${msg}</p>
             </body></html>
           `;
         }
 
-        displayAiResponse(msg, htmlToDisplay);
+        displayAiResponse(htmlToDisplay);
 
         // Add entry to chat history with arrow indicator (◄)
         const chatTitle = text.length > 22 ? text.slice(0, 20) + '...' : (text || (attachedFiles[0]?.name ?? 'Untitled Prompt'));
@@ -200,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatSessions.push({
           id: chatId,
           prompt: text || `Uploaded ${attachedFiles.length} file(s)`,
-          statusMessage: msg,
           htmlContent: htmlToDisplay,
         });
 
@@ -223,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAttachedFiles();
         if (fileInput) fileInput.value = '';
       } catch (err) {
-        displayAiResponse(`Error: ${err.message || 'Failed to process request'}`, '');
+        displayAiResponse(`<!DOCTYPE html><html><body style="background:#110e08;color:#e2a221;padding:20px;">Error: ${err.message || 'Failed to process request'}</body></html>`);
       } finally {
         submitBtn.disabled = false;
       }

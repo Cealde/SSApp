@@ -3,10 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SathyaSethu | Workspace</title>
+    <title>SatyaSethu Engine | Dashboard</title>
     <meta
       name="description"
-      content="Premium SathyaSethu workspace dashboard and workflow hub."
+      content="SatyaSethu Engine workspace dashboard and projects."
+    />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap"
+      rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/dashboard.css" />
   </head>
@@ -15,240 +22,55 @@
     <div class="page-glow glow-two" aria-hidden="true"></div>
     <div class="page-glow glow-three" aria-hidden="true"></div>
 
-    <header class="topbar" aria-label="Top navigation">
-      <div class="nav-left">
-        <div class="brand-row">
-          <div class="brand-mark" aria-hidden="true">S</div>
-          <div class="brand-copy">
-            <span class="brand-name">SathyaSethu</span>
-          </div>
-        </div>
-
-        <nav class="main-nav" aria-label="Main navigation">
-          <a href="#overview">Overview</a>
-          <a href="#workspace">Workspace</a>
-          <a href="#activity">Activity</a>
-          <a href="#help">Help</a>
-        </nav>
-      </div>
-
-      <div class="nav-actions">
-        <button class="icon-button" type="button" aria-label="Search">
-          <span aria-hidden="true">⌕</span>
-        </button>
-        <button class="icon-button" type="button" aria-label="Notifications">
-          <span aria-hidden="true">◌</span>
-        </button>
-        <button class="mobile-menu" type="button" aria-label="Toggle menu">
-          Menu
-        </button>
-        <div class="avatar-wrap" aria-label="User profile">
-          <div class="avatar">A</div>
-          <div class="user-meta">
-            <span id="currentUserName">Alex</span>
-            <small>Admin</small>
-          </div>
-        </div>
-      </div>
+    <!-- Centered Header with White Inverted Logo and Title -->
+    <header class="dashboard-top-header">
+      <img src="/assets/logo.svg" alt="SatyaSethu Logo" class="brand-logo-white dashboard-logo" />
+      <h1 class="dashboard-engine-title">SatyaSethu Engine</h1>
     </header>
 
-    <main class="dashboard-shell">
-      <section id="overview" class="hero-card bento-card">
-        <div class="hero-copy">
-          <p class="eyebrow">Good afternoon</p>
-          <h1>Welcome back, <span id="hero-name">Alex</span>.</h1>
-          <p>
-            Turn workflows, context, and input into a polished operational rhythm.
-          </p>
+    <main class="dashboard-container">
+      <!-- Top Section: Greeting & Time Card + Organization Card -->
+      <section class="top-cards-row">
+        <!-- Left Greeting Card -->
+        <div class="bento-card greeting-card">
+          <div class="greeting-content">
+            <h2 class="greeting-title" id="greetingTitle">
+              <span id="greetingTimeWord">Good Afternoon</span>
+              <span id="greetingUserName" class="greeting-user"></span>
+            </h2>
+          </div>
 
-          <div class="hero-actions">
-            <button type="button" class="primary-button small-button">New workspace</button>
-            <button type="button" class="secondary-button small-button">View reports</button>
+          <div class="greeting-footer">
+            <a href="/prompt.html" class="new-project-pill-btn" id="newProjectBtn">New Project</a>
+            <span class="corner-clock" id="cornerClock">8:23 AM</span>
           </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="visual-orb orb-one"></div>
-          <div class="visual-orb orb-two"></div>
-          <div class="mini-panel">
-            <span>Uptime</span>
-            <strong>99.9%</strong>
+        <!-- Right Organization Card -->
+        <div class="bento-card org-card">
+          <div class="org-logo-card">
+            <img id="orgLogoImg" src="" alt="Organization Logo" class="org-logo-img" style="display: none;" />
+            <div id="orgLogoPlaceholder" class="org-logo-placeholder">
+              <span>[Organization<br />Logo]</span>
+            </div>
           </div>
+          <span class="org-name-text" id="orgNameText">Unincorporated</span>
         </div>
       </section>
 
-      <section class="bento-grid" id="workspace">
-        <article class="bento-card feature-card feature-primary">
-          <div class="card-header">
-            <div>
-              <p class="eyebrow">Workspace</p>
-              <h2>Compose a prompt</h2>
-            </div>
-          </div>
+      <!-- Lower Section: Pick up where you left off -->
+      <section class="projects-section">
+        <h2 class="projects-heading">Pick up where you left off</h2>
+        <div class="projects-grid" id="projectsGrid">
+          <!-- Projects rendered here if any; empty for now -->
 
-          <form id="user-form" class="message-form" novalidate>
-            <div class="input-shell">
-              <label for="text-input" class="sr-only">Text input</label>
-              <textarea
-                id="text-input"
-                name="text"
-                rows="5"
-                placeholder="Describe the workflow, file, prompt, or task you want SathyaSethu to process..."
-                required
-              ></textarea>
-            </div>
-
-            <div class="input-actions">
-              <label class="file-picker" for="file-input">
-                <input type="file" id="file-input" />
-                <span>Attach file</span>
-              </label>
-
-              <button type="submit" class="primary-button submit-button">Run workflow</button>
-            </div>
-          </form>
-
-          <div id="output" class="output-box" role="status" aria-live="polite">
-            Ready for your next request.
-          </div>
-        </article>
-
-        <article class="bento-card stats-card">
-          <div class="card-header slim-header">
-            <div>
-              <p class="eyebrow">Overview</p>
-              <h2>Performance</h2>
-            </div>
-          </div>
-
-          <div class="stats-grid">
-            <div class="stat-box">
-              <span>Tasks</span>
-              <strong>1,248</strong>
-            </div>
-            <div class="stat-box">
-              <span>Files</span>
-              <strong>86</strong>
-            </div>
-            <div class="stat-box accent-box">
-              <span>Latency</span>
-              <strong>144ms</strong>
-            </div>
-          </div>
-        </article>
-
-        <article class="bento-card quick-card">
-          <div class="card-header slim-header">
-            <div>
-              <p class="eyebrow">Quick actions</p>
-              <h2>Shortcuts</h2>
-            </div>
-          </div>
-
-          <div class="quick-grid">
-            <button type="button" class="action-tile">
-              <span class="tile-badge blue">+</span>
-              <span>New brief</span>
-            </button>
-            <button type="button" class="action-tile">
-              <span class="tile-badge violet">↗</span>
-              <span>Export</span>
-            </button>
-            <button type="button" class="action-tile">
-              <span class="tile-badge teal">⟳</span>
-              <span>Sync</span>
-            </button>
-            <button type="button" class="action-tile">
-              <span class="tile-badge amber">✦</span>
-              <span>Insights</span>
-            </button>
-          </div>
-        </article>
-
-        <article class="bento-card activity-card" id="activity">
-          <div class="card-header slim-header">
-            <div>
-              <p class="eyebrow">Recent activity</p>
-              <h2>Updates</h2>
-            </div>
-          </div>
-
-          <ul class="activity-list">
-            <li>
-              <span class="activity-dot green"></span>
-              <div>
-                <strong>Project sync completed</strong>
-                <small>2 minutes ago</small>
-              </div>
-            </li>
-            <li>
-              <span class="activity-dot blue"></span>
-              <div>
-                <strong>File upload processed</strong>
-                <small>36 minutes ago</small>
-              </div>
-            </li>
-            <li>
-              <span class="activity-dot amber"></span>
-              <div>
-                <strong>Prompt review queued</strong>
-                <small>1 hour ago</small>
-              </div>
-            </li>
-          </ul>
-        </article>
-
-        <article class="bento-card profile-card">
-          <div class="card-header slim-header">
-            <div>
-              <p class="eyebrow">Profile</p>
-              <h2>Account</h2>
-            </div>
-          </div>
-
-          <div class="profile-panel">
-            <div class="profile-identity">
-              <div class="avatar large">A</div>
-              <div>
-                <strong id="profile-name">Alex Morgan</strong>
-                <small>Product operations</small>
-              </div>
-            </div>
-
-            <div class="status-pill">
-              <span class="pulse-dot"></span>
-              Available
-            </div>
-          </div>
-        </article>
-
-        <article class="bento-card info-card" id="help">
-          <div class="card-header slim-header">
-            <div>
-              <p class="eyebrow">Support</p>
-              <h2>Resources</h2>
-            </div>
-          </div>
-
-          <div class="resource-list">
-            <div>
-              <strong>SathyaSethu Docs</strong>
-              <small>Guides and workflows</small>
-            </div>
-            <div>
-              <strong>Team status</strong>
-              <small>Operational</small>
-            </div>
-            <div>
-              <strong>Release notes</strong>
-              <small>Latest improvements</small>
-            </div>
-          </div>
-        </article>
+          <!-- Plus Card Redirecting to prompt.html -->
+          <a href="/prompt.html" class="bento-card add-project-card" aria-label="Start new project">
+            <span class="add-project-plus">+</span>
+          </a>
+        </div>
       </section>
     </main>
-
-    <div class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/js/dashboard.js"></script>
   </body>

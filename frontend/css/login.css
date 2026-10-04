@@ -1,23 +1,23 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap");
 
 :root {
-  --bg-0: #090909;
-  --bg-1: #140707;
-  --bg-2: #1a0b0b;
-  --panel: rgba(24, 10, 10, 0.72);
-  --panel-strong: rgba(15, 7, 7, 0.8);
-  --panel-soft: rgba(23, 12, 12, 0.5);
-  --line: rgba(255, 87, 87, 0.17);
-  --text: #fff5f5;
-  --muted: #e6b0b0;
-  --muted-strong: #ffd8d8;
-  --accent: #d4101a;
-  --accent-alt: #ff5a5f;
-  --accent-soft: rgba(212, 16, 26, 0.2);
+  --bg-0: #0a0907;
+  --bg-1: #14110b;
+  --bg-2: #1b160e;
+  --panel: rgba(26, 21, 14, 0.72);
+  --panel-strong: rgba(20, 16, 11, 0.82);
+  --panel-soft: rgba(30, 24, 16, 0.5);
+  --line: transparent;
+  --text: #fbf7ee;
+  --muted: #dfd4c0;
+  --muted-strong: #fff1d8;
+  --accent: #e2a221;
+  --accent-alt: #f5b73d;
+  --accent-soft: rgba(226, 162, 33, 0.2);
   --danger: #ff6b6b;
   --success: #4ade80;
   --shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
-  --button-shadow: 0 12px 24px rgba(212, 16, 26, 0.28);
+  --button-shadow: 0 12px 24px rgba(226, 162, 33, 0.28);
   --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-title: "Momo Trust Display", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -35,8 +35,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(212, 16, 26, 0.24), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(255, 90, 95, 0.18), transparent 24%),
+    radial-gradient(circle at top left, rgba(226, 162, 33, 0.22), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(245, 183, 61, 0.16), transparent 26%),
     linear-gradient(135deg, var(--bg-0), var(--bg-1) 38%, var(--bg-2));
   color: var(--text);
   font-family: var(--font-body);
@@ -58,6 +58,35 @@ button {
   cursor: pointer;
 }
 
+/* White inverted logo */
+.brand-logo-white {
+  filter: brightness(0) invert(1);
+}
+
+.login-top-right {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-corner-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
+  opacity: 0.95;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.login-top-right:hover .login-corner-logo {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
 .ambient {
   position: fixed;
   border-radius: 50%;
@@ -70,7 +99,7 @@ button {
 .ambient-one {
   width: 380px;
   height: 380px;
-  background: rgba(212, 16, 26, 0.23);
+  background: rgba(226, 162, 33, 0.22);
   top: 5%;
   left: 5%;
 }
@@ -78,7 +107,7 @@ button {
 .ambient-two {
   width: 440px;
   height: 440px;
-  background: rgba(255, 90, 95, 0.18);
+  background: rgba(245, 183, 61, 0.16);
   right: 5%;
   bottom: 5%;
   animation-delay: 1.2s;
@@ -87,7 +116,7 @@ button {
 .ambient-three {
   width: 260px;
   height: 260px;
-  background: rgba(255, 50, 50, 0.12);
+  background: rgba(226, 162, 33, 0.1);
   left: 40%;
   bottom: 20%;
   animation-delay: 2.4s;
@@ -115,14 +144,14 @@ button {
   width: 100%;
   margin: 0 auto;
   padding: 1.8rem 2rem;
-  border: 1px solid rgba(255, 87, 87, 0.12);
+  border: none;
   border-radius: 28px;
   background:
-    radial-gradient(ellipse at center, rgba(17, 8, 8, 0.92) 20%, rgba(12, 5, 5, 0.6) 65%, transparent 100%),
-    linear-gradient(180deg, rgba(19, 9, 9, 0.88), rgba(10, 4, 4, 0.45));
+    radial-gradient(ellipse at center, rgba(20, 16, 11, 0.94) 20%, rgba(15, 12, 8, 0.65) 65%, transparent 100%),
+    linear-gradient(180deg, rgba(22, 18, 12, 0.9), rgba(12, 10, 6, 0.5));
   box-shadow:
     0 0 60px 20px rgba(0, 0, 0, 0.85),
-    inset 0 0 45px 15px rgba(8, 3, 3, 0.95);
+    inset 0 0 45px 15px rgba(10, 8, 5, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   -webkit-mask-image: radial-gradient(ellipse 92% 90% at 50% 50%, black 50%, rgba(0, 0, 0, 0.75) 72%, rgba(0, 0, 0, 0.3) 88%, transparent 100%);
@@ -138,7 +167,7 @@ button {
   padding: 0.35rem 0.75rem 0.35rem 0.35rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: none;
 }
 
 .brand-mark {
@@ -148,10 +177,11 @@ button {
   place-items: center;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-  color: white;
+  color: #110e08;
   font-weight: 700;
   font-size: 0.85rem;
   box-shadow: var(--button-shadow);
+  border: none;
 }
 
 .brand-copy {
@@ -220,11 +250,12 @@ label {
   font-weight: 600;
 }
 
+/* Textboxes INSIDE LOGIN retain their border as requested */
 input[type="text"],
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  border: 1px solid rgba(255, 87, 87, 0.28);
+  border: 1px solid rgba(226, 162, 33, 0.35);
   background: transparent;
   color: var(--text);
   padding: 0.68rem 0.88rem;
@@ -235,12 +266,12 @@ input[type="password"] {
 }
 
 input::placeholder {
-  color: rgba(230, 176, 176, 0.5);
+  color: rgba(223, 212, 192, 0.45);
 }
 
 input:focus {
-  border-color: rgba(212, 16, 26, 0.85);
-  box-shadow: 0 0 0 3px rgba(212, 16, 26, 0.2);
+  border-color: rgba(226, 162, 33, 0.9);
+  box-shadow: 0 0 0 3px rgba(226, 162, 33, 0.22);
   background: transparent;
 }
 
@@ -260,13 +291,13 @@ input:focus {
   border: 0;
   border-radius: 8px;
   padding: 0.28rem 0.55rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--muted-strong);
   font-size: 0.75rem;
 }
 
 .password-toggle:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .meta-row {
@@ -310,7 +341,7 @@ input:focus {
   border-radius: 14px;
   padding: 0.75rem 1rem;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
-  color: white;
+  color: #110e08;
   font-weight: 700;
   font-size: 0.95rem;
   box-shadow: var(--button-shadow);
@@ -320,7 +351,7 @@ input:focus {
 .primary-button:hover,
 .primary-button:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px rgba(212, 16, 26, 0.35);
+  box-shadow: 0 16px 30px rgba(226, 162, 33, 0.35);
 }
 
 .primary-button:active {
@@ -338,7 +369,7 @@ input:focus {
   width: 0.75rem;
   height: 0.75rem;
   margin-left: 0.65rem;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(17, 14, 8, 0.7);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -400,8 +431,8 @@ input:focus {
   display: grid;
   place-items: center;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(212, 16, 26, 0.18), rgba(255, 90, 95, 0.14));
-  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(226, 162, 33, 0.2), rgba(245, 183, 61, 0.14));
+  border: none;
   font-size: 1.6rem;
   color: var(--text);
   box-shadow: var(--shadow);
@@ -433,20 +464,19 @@ input:focus {
 
 .secondary-button {
   width: 100%;
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 12px;
   padding: 0.65rem 0.9rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   font-size: 0.85rem;
   font-weight: 600;
-  transition: background 180ms ease, border-color 180ms ease;
+  transition: background 180ms ease;
 }
 
 .secondary-button:hover,
 .secondary-button:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .text-button {

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SathyaSethu | Prompt Workspace</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -13,7 +14,7 @@
   <link rel="stylesheet" href="/css/prompt.css">
 </head>
 <body>
-  <!-- Ambient background glow matching login -->
+  <!-- Ambient background glow matching warm gold/amber theme -->
   <div class="ambient ambient-one" aria-hidden="true"></div>
   <div class="ambient ambient-two" aria-hidden="true"></div>
 
@@ -38,7 +39,7 @@
         </div>
       </div>
 
-      <!-- Chat History Panel (pure text clickable items, no placeholder list) -->
+      <!-- Chat History Panel (pure text clickable items, no borders) -->
       <nav class="chat-history-panel" aria-label="Chat History">
         <h2 class="sidebar-title">Chat History</h2>
         <ul class="chat-history-list" id="chatHistoryList">
@@ -56,26 +57,18 @@
           <div class="user-bubble" id="userMessageText"></div>
         </div>
 
-        <!-- AI Engine Response Card (hidden until a query/result is loaded) -->
-        <div class="ai-response-card" id="aiResponseCard" style="display: none;">
-          <div class="ai-header">
-            <p class="ai-text" id="aiStatusText"></p>
-            <span class="engine-badge">SS ENGINE</span>
-          </div>
-
-          <!-- Embedded Iframe for Rendered Result -->
-          <div class="iframe-wrapper">
-            <iframe
-              id="contentIframe"
-              class="preview-iframe"
-              title="Rendered Output Preview"
-              srcdoc=""
-            ></iframe>
-          </div>
+        <!-- Embedded Iframe for Rendered Result (no response box wrapper) -->
+        <div class="iframe-wrapper" id="iframeWrapper" style="display: none;">
+          <iframe
+            id="contentIframe"
+            class="preview-iframe"
+            title="Rendered Output Preview"
+            srcdoc=""
+          ></iframe>
         </div>
       </section>
 
-      <!-- Bottom Prompt & File Upload Area (taller prompt window) -->
+      <!-- Bottom Prompt & File Upload Area (stuck to bottom, no border) -->
       <form class="prompt-box-form" id="promptForm">
         <div class="input-container">
           <div class="attached-files-list" id="attachedFilesList"></div>
