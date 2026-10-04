@@ -26,6 +26,11 @@ async def serve_index():
 async def serve_dashboard():
     return FileResponse(FRONTEND_DIR / "pages" / "dashboard.html")
 
+@app.get("/prompt")
+@app.get("/prompt.html")
+async def serve_prompt():
+    return FileResponse(FRONTEND_DIR / "pages" / "prompt.html")
+
 @app.get("/login")
 @app.get("/login.html")
 async def serve_login():

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SathyaSethu | Prompt Workspace</title>
+  <link rel="stylesheet" href="/css/prompt.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Navigation & Sidebar -->
+    <aside class="left-sidebar">
+      <div class="brand-section">
+        <!-- Empty space for icon above dashboard button -->
+        <div class="icon-placeholder" id="brandIconSlot" aria-label="Brand Icon Slot">
+          <!-- Icon slot reserved for future branding -->
+          <span>✦</span>
+        </div>
+        
+        <!-- Dashboard Button -->
+        <a href="/dashboard" class="dashboard-btn" id="dashboardBtn">
+          <span class="btn-icon">◀</span>
+          <span>Dashboard</span>
+        </a>
+
+        <!-- Empty space for text below icon / dashboard -->
+        <div class="text-placeholder" id="brandTextSlot">
+          <!-- Text slot reserved for future branding/org info -->
+        </div>
+      </div>
+
+      <!-- Chat History Panel -->
+      <nav class="chat-history-panel" aria-label="Chat History">
+        <h2 class="sidebar-title">Chat History</h2>
+        <ul class="chat-history-list" id="chatHistoryList">
+          <li>
+            <button type="button" class="chat-item" data-id="chat-1">
+              <span class="item-title">Make pdf</span>
+              <span class="active-arrow" aria-hidden="true">&#9668;</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="chat-item" data-id="chat-2">
+              <span class="item-title">Color Pallete</span>
+              <span class="active-arrow" aria-hidden="true">&#9668;</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="chat-item" data-id="chat-3">
+              <span class="item-title">Make ppt</span>
+              <span class="active-arrow" aria-hidden="true">&#9668;</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="chat-item" data-id="chat-4">
+              <span class="item-title">Get weather</span>
+              <span class="active-arrow" aria-hidden="true">&#9668;</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="chat-item active" data-id="chat-5">
+              <span class="item-title">Make news</span>
+              <span class="active-arrow" aria-hidden="true">&#9668;</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="main-area">
+      <!-- Chat Conversation Log -->
+      <section class="chat-container" id="chatContainer">
+        <!-- User Query Bubble -->
+        <div class="user-message-row">
+          <div class="user-bubble" id="userMessageText">
+            Make a webpage for news and thing
+          </div>
+        </div>
+
+        <!-- AI Engine Response Card -->
+        <div class="ai-response-card" id="aiResponseCard">
+          <div class="ai-header">
+            <p class="ai-text" id="aiStatusText">
+              Sure here is the news webpage made after your color pallete and font choices
+            </p>
+            <span class="engine-badge">SS ENGINE</span>
+          </div>
+
+          <!-- Embedded Iframe for Rendered Result -->
+          <div class="iframe-wrapper">
+            <iframe
+              id="contentIframe"
+              class="preview-iframe"
+              title="Rendered Output Preview"
+              srcdoc=""
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Prompt & File Upload Area -->
+      <form class="prompt-box-form" id="promptForm">
+        <div class="input-container">
+          <div class="attached-files-list" id="attachedFilesList"></div>
+          <textarea
+            id="promptInput"
+            class="prompt-textarea"
+            placeholder="What should we do today"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <div class="prompt-actions">
+          <!-- File Upload Button accepting any file format -->
+          <label class="file-upload-btn" title="Upload files" for="fileInput">
+            <span aria-hidden="true">+</span>
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              aria-label="Upload files (any format)"
+            />
+          </label>
+
+          <!-- Submit Button -->
+          <button type="submit" class="submit-prompt-btn" id="submitBtn" aria-label="Send Prompt">
+            <span aria-hidden="true">&#10148;</span>
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="/js/prompt.js"></script>
+</body>
+</html>
