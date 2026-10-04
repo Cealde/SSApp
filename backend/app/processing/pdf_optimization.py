@@ -2,7 +2,10 @@ import io
 from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel
 import pymupdf
-import pymupdf4llm
+try:
+    import pymupdf4llm
+except ImportError:
+    pymupdf4llm = None
 
 from backend.app.processing.image_utils import optimize_image_bytes
 
@@ -107,9 +110,14 @@ def optimize_pdf(
         extracted_images = extract_and_optimize_pdf_images(doc, pages_to_keep, config)
 
         if config.output_format == "markdown":
-            extracted_text = pymupdf4llm.to_markdown(
-                doc, pages=pages_to_keep
-            ).strip()
+            if pymupdf4llm is not None:
+                extracted_text = pymupdf4llm.to_markdown(
+                    doc, pages=pages_to_keep
+                ).strip()
+            else:
+                extracted_text = "\n\n".join(
+                    doc[p].get_text() for p in pages_to_keep
+                ).strip()
 
             return OptimizedPDFResult(
                 filename=filename,
