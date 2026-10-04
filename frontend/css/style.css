@@ -46,3 +46,55 @@
   color: #fbf7ee;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
+
+#mermaid-section {
+  margin-top: 24px;
+}
+
+#mermaid-input {
+  width: 100%;
+  max-width: 720px;
+  font-family: Consolas, Menlo, monospace;
+  font-size: 13px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(26, 21, 14, 0.85);
+  color: #fbf7ee;
+  resize: vertical;
+}
+
+#render-mermaid {
+  display: block;
+  margin: 8px 0 16px;
+  padding: 6px 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: #e2a221;
+  color: #110e08;
+  font-weight: 600;
+}
+
+.mini-box {
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 80px;
+  background: rgba(26, 21, 14, 0.75);
+  overflow: auto;
+  max-width: 720px;
+  color: #fbf7ee;
+}
+
+.mini-box svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  color: #ff6b6b;
+  font-family: Consolas, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
