@@ -114,6 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
     saved.forEach((session) => {
       if (!session || !session.id || !session.prompt) return;
 
+      if (session.config && typeof session.responseData === 'object' && session.responseData && !session.responseData.config) {
+        session.responseData.config = session.config;
+      }
+
       const rawContent = typeof session.responseData === 'object' && session.responseData.ai_result !== undefined
         ? session.responseData.ai_result
         : session.responseData;
@@ -123,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prompt: session.prompt,
         content: rawContent,
         responseData: session.responseData,
+        config: session.config || (session.responseData && session.responseData.config),
         timestamp: session.timestamp || Date.now()
       });
 
@@ -365,39 +370,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const IMG_REGEX = /(?:!\[(.*?)\]\((https?:\/\/[^\s\)]+)\))|(?:\[(?:Image|Photo|Unsplash)[^\]]*\]\((https?:\/\/[^\s\)]+)\))|(?:\*?Image(?:\s+Suggestion)?:\s*\[?(.*?)\]?\(?(https?:\/\/[^\s\)\*]+)\)?\*?)/i;
 
   // --- Split Multiple Deliverables ---
-  function splitDeliverables(rawContent) {
+  function splitDeliverables(rawContent, formats = []) {
     if (typeof rawContent !== 'string') {
-      return { presentation: null, website: null, mermaid: null, raw: rawContent };
+      return { presentation: null, website: null, mermaid: null, twitter: null, linkedin: null, raw: rawContent };
     }
 
     let websiteHtml = null;
     let mermaidCode = null;
     let presentationMd = null;
+    let twitterContent = null;
+    let linkedinContent = null;
 
-    // Extract website HTML
+    // 1. Extract website HTML
     const htmlMatch = rawContent.match(/```html\s*([\s\S]*?)```/i) ||
                       rawContent.match(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i);
     if (htmlMatch) {
       websiteHtml = (htmlMatch[1] || htmlMatch[0]).trim();
     }
 
-    // Extract Mermaid code
+    // 2. Extract Mermaid code
     const mermaidMatch = rawContent.match(/```mermaid\s*([\s\S]*?)```/i) ||
                          rawContent.match(/(?:graph TD|graph LR|flowchart TD|flowchart LR|xychart-beta)[\s\S]*?(?=\n\n#|\n\n```|$)/i);
     if (mermaidMatch) {
       mermaidCode = (mermaidMatch[1] || mermaidMatch[0]).trim();
     }
 
-    // Extract Presentation markdown (slides)
+    // 3. Extract Twitter/X post
+    const twitterMatch = rawContent.match(/#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Twitter(?:\/X)?(?:\s+Post)?|Tweet(?:\s+Thread)?)\b([\s\S]*?)(?=\n#{1,3}\s+(?:\d+\.\s+)?Deliverable:|\n```html|\n```mermaid|$)/i);
+    if (twitterMatch) {
+      twitterContent = twitterMatch[1].trim();
+    } else if (formats.includes('twitter') && !formats.includes('presentation') && !formats.includes('website')) {
+      twitterContent = rawContent.trim();
+    }
+
+    // 4. Extract LinkedIn post
+    const linkedinMatch = rawContent.match(/#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?LinkedIn(?:\s+Post)?\b([\s\S]*?)(?=\n#{1,3}\s+(?:\d+\.\s+)?Deliverable:|\n```html|\n```mermaid|$)/i);
+    if (linkedinMatch) {
+      linkedinContent = linkedinMatch[1].trim();
+    } else if (formats.includes('linkedin') && !formats.includes('presentation') && !formats.includes('website') && !twitterContent) {
+      linkedinContent = rawContent.trim();
+    }
+
+    // 5. Extract Presentation markdown (slides)
     let presText = rawContent;
-    const delivMatch = presText.match(/\n#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Website|Mermaid|Infographic|Diagram)\b|\n```html|\n```mermaid/i);
+    const delivMatch = presText.match(/\n#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Website|Mermaid|Infographic|Diagram|Twitter|LinkedIn|Tweet)\b|\n```html|\n```mermaid/i);
     if (delivMatch) {
       presText = presText.slice(0, delivMatch.index).trim();
     }
     presText = presText.replace(/^(?:#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Presentation|Slides)\b[^\n]*\n+)/i, '').trim();
 
-    // Check if presText has slides
-    if (/--- Slide|\bSlide \d+:|## Slide/i.test(presText) || (presText.includes('---') && presText.length > 50)) {
+    // ONLY mark as presentation if explicit slide structures exist OR presentation format was requested
+    const hasExplicitSlides = /##\s*(?:Slide\s*\d+|Title\s*Slide)|\bSlide\s+\d+:|---\s*Slide\s*\d+/i.test(presText) ||
+                              (formats.includes('presentation') && (presText.includes('\n---\n') || presText.includes('\n## ')));
+
+    const onlySocial = formats.length > 0 && formats.every((f) => f === 'twitter' || f === 'linkedin');
+    if (hasExplicitSlides && !onlySocial) {
       presentationMd = presText;
     }
 
@@ -405,6 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
       presentation: presentationMd,
       website: websiteHtml,
       mermaid: mermaidCode,
+      twitter: twitterContent,
+      linkedin: linkedinContent,
       raw: rawContent
     };
   }
@@ -808,6 +837,393 @@ document.addEventListener('DOMContentLoaded', () => {
     </body></html>`;
   }
 
+  // Helper to render interactive Social Media (Twitter/X or LinkedIn) card with Copy to Clipboard
+  function renderSocialMediaHtml(rawPostContent, platform = 'twitter', company = 'SatyaSetu', logoUrl = '/assets/logo.svg') {
+    let cleanText = String(rawPostContent || '')
+      .replace(/^```[a-zA-Z]*\n?/, '')
+      .replace(/\n?```$/, '')
+      .replace(/^#{1,3}\s+(?:\d+\.\s+)?(?:Deliverable:\s*)?(?:Twitter(?:\/X)?(?:\s+Post)?|LinkedIn(?:\s+Post)?|Social(?:\s+Media)?)[^\n]*\n+/i, '')
+      .trim();
+
+    const isTwitter = platform === 'twitter';
+    const brandName = company || 'SatyaSetu';
+    const handle = `@${brandName.toLowerCase().replace(/[^a-z0-9_]/g, '') || 'sathyasethu'}`;
+
+    // Split into tweets if it's a thread
+    let tweets = [];
+    if (isTwitter) {
+      if (cleanText.includes('\n---\n') || cleanText.includes('\n--- \n')) {
+        tweets = cleanText.split(/\n\s*---\s*\n/).map((t) => t.trim()).filter(Boolean);
+      } else if (/\n\n(?=(?:\[?\d+[\/\)]\d*|\d+\.\s+))/m.test(cleanText)) {
+        tweets = cleanText.split(/\n\n(?=(?:\[?\d+[\/\)]\d*|\d+\.\s+))/m).map((t) => t.trim()).filter(Boolean);
+      } else {
+        tweets = [cleanText];
+      }
+    } else {
+      tweets = [cleanText];
+    }
+
+    function formatSocialBody(text) {
+      let escaped = escapeHtml(text);
+      escaped = escaped.replace(/(#[a-zA-Z0-9_\u0900-\u097F]+)/g, '<span class="hashtag">$1</span>');
+      escaped = escaped.replace(/(@[a-zA-Z0-9_]+)/g, '<span class="mention">$1</span>');
+      escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="social-link">$1</a>');
+      return escaped.replace(/\n/g, '<br>');
+    }
+
+    const tweetCardsHtml = tweets.map((tweet, idx) => {
+      const charCount = tweet.length;
+      const countClass = charCount > 280 ? 'count-warning' : 'count-ok';
+      const isThread = tweets.length > 1;
+
+      return `
+        <div class="tweet-card ${isThread && idx < tweets.length - 1 ? 'has-thread-line' : ''}">
+          <div class="tweet-avatar-col">
+            <div class="tweet-avatar">
+              ${logoUrl ? `<img src="${logoUrl}" alt="${escapeHtml(brandName)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />` : ''}
+              <span class="avatar-fallback" style="${logoUrl ? 'display:none;' : 'display:flex;'}">${brandName.charAt(0).toUpperCase()}</span>
+            </div>
+            ${isThread && idx < tweets.length - 1 ? '<div class="thread-connector"></div>' : ''}
+          </div>
+          <div class="tweet-main">
+            <div class="tweet-header">
+              <span class="tweet-name">${escapeHtml(brandName)}</span>
+              <span class="verified-badge" title="Verified">✓</span>
+              <span class="tweet-handle">${escapeHtml(handle)}</span>
+              <span class="tweet-dot">·</span>
+              <span class="tweet-time">${isThread ? `Tweet ${idx + 1}/${tweets.length}` : 'Just now'}</span>
+            </div>
+            <div class="tweet-body">
+              ${formatSocialBody(tweet)}
+            </div>
+            <div class="tweet-footer">
+              <div class="tweet-metrics">
+                <span class="metric-btn" title="Reply"><span class="icon">💬</span> 12</span>
+                <span class="metric-btn" title="Repost"><span class="icon">🔁</span> 48</span>
+                <span class="metric-btn" title="Like"><span class="icon">❤️</span> 186</span>
+              </div>
+              <div class="tweet-tools">
+                <span class="char-pill ${countClass}">${charCount} / 280</span>
+                <button type="button" class="mini-copy-btn" onclick="copySnippet(${idx})">📋 Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('\n');
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Momo+Trust+Display&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0a06;
+      color: #fbf7ee;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .feed-container {
+      width: 100%;
+      max-width: 620px;
+      background: #140f09;
+      border: 1px solid rgba(226, 162, 33, 0.25);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    }
+    .top-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .platform-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #e2a221;
+      font-family: 'Momo Trust Display', serif;
+    }
+    .platform-icon {
+      font-size: 1.15rem;
+      color: #ffffff;
+    }
+    .main-copy-btn {
+      background: #e2a221;
+      color: #0a0907;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(226, 162, 33, 0.35);
+    }
+    .main-copy-btn:hover {
+      background: #f5b73d;
+      transform: translateY(-1px);
+    }
+    .main-copy-btn.copied {
+      background: #22c55e !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35) !important;
+    }
+    .tweet-card {
+      display: flex;
+      gap: 14px;
+      position: relative;
+      padding-bottom: 16px;
+    }
+    .tweet-card.has-thread-line {
+      padding-bottom: 24px;
+    }
+    .tweet-avatar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 44px;
+    }
+    .tweet-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #221a10;
+      border: 1.5px solid rgba(226, 162, 33, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .tweet-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .avatar-fallback {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e2a221;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .thread-connector {
+      width: 2px;
+      flex: 1;
+      background: rgba(226, 162, 33, 0.25);
+      margin-top: 8px;
+    }
+    .tweet-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .tweet-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .tweet-name {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #ffffff;
+    }
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1d9bf0;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .tweet-handle {
+      color: #8b8070;
+      font-size: 0.88rem;
+    }
+    .tweet-dot {
+      color: #8b8070;
+      font-size: 0.85rem;
+    }
+    .tweet-time {
+      color: #8b8070;
+      font-size: 0.85rem;
+    }
+    .tweet-body {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: #e8e2d5;
+      word-break: break-word;
+      margin-bottom: 12px;
+    }
+    .hashtag {
+      color: #1d9bf0;
+      font-weight: 500;
+    }
+    .mention {
+      color: #1d9bf0;
+      font-weight: 500;
+    }
+    .social-link {
+      color: #e2a221;
+      text-decoration: underline;
+    }
+    .tweet-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 10px;
+    }
+    .tweet-metrics {
+      display: flex;
+      gap: 18px;
+    }
+    .metric-btn {
+      color: #7a7060;
+      font-size: 0.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+    }
+    .tweet-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .char-pill {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .count-ok {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    .count-warning {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    .mini-copy-btn {
+      background: rgba(226, 162, 33, 0.12);
+      border: 1px solid rgba(226, 162, 33, 0.28);
+      color: #dfd4c0;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .mini-copy-btn:hover {
+      background: rgba(226, 162, 33, 0.25);
+      color: #ffffff;
+    }
+    .mini-copy-btn.copied {
+      background: #22c55e !important;
+      color: #ffffff !important;
+      border-color: #22c55e !important;
+    }
+    .raw-data-store {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="feed-container">
+    <div class="top-action-bar">
+      <div class="platform-badge">
+        <span class="platform-icon">${isTwitter ? '𝕏' : 'in'}</span>
+        <span>${isTwitter ? 'Twitter / X Post' : 'LinkedIn Post'}</span>
+      </div>
+      <button type="button" class="main-copy-btn" id="fullCopyBtn" onclick="copyFullPost()">
+        📋 Copy Post
+      </button>
+    </div>
+
+    ${tweetCardsHtml}
+  </div>
+
+  <div class="raw-data-store" id="rawFullPost">${escapeHtml(cleanText)}</div>
+  <script>
+    const tweetsData = ${JSON.stringify(tweets)};
+
+    function executeCopy(text, btnElement) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showCopied(btnElement);
+        }).catch(() => fallbackCopy(text, btnElement));
+      } else {
+        fallbackCopy(text, btnElement);
+      }
+    }
+
+    function fallbackCopy(text, btnElement) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta);
+      showCopied(btnElement);
+    }
+
+    function showCopied(btn) {
+      if (!btn) return;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+
+    function copyFullPost() {
+      const fullText = document.getElementById('rawFullPost').textContent;
+      const btn = document.getElementById('fullCopyBtn');
+      executeCopy(fullText, btn);
+    }
+
+    function copySnippet(index) {
+      const snippet = tweetsData[index] || '';
+      const btns = document.querySelectorAll('.mini-copy-btn');
+      const btn = btns[index];
+      executeCopy(snippet, btn);
+    }
+  </script>
+</body>
+</html>`;
+  }
+
   // Helper to render Markdown or outline text as clean HTML
   function markdownToHtml(rawMarkdown) {
     const lines = rawMarkdown.split('\n');
@@ -970,11 +1386,26 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const deliverables = splitDeliverables(rawContent);
-    const presTheme = document.getElementById('presTheme')?.value || 'amber';
+    const currentFormats = (responseData && responseData.config && responseData.config.formats) ||
+                           (typeof readConfig === 'function' ? readConfig().formats : []) || [];
+    const deliverables = splitDeliverables(rawContent, currentFormats);
+    const presTheme = (responseData && responseData.config && responseData.config.presTheme) ||
+                      document.getElementById('presTheme')?.value || 'amber';
 
     // Build active deliverables dictionary
     const views = {};
+    if (deliverables.twitter) {
+      views.twitter = {
+        title: 'Twitter / X Post',
+        html: renderSocialMediaHtml(deliverables.twitter, 'twitter', orgName || 'SatyaSetu', orgIconUrl)
+      };
+    }
+    if (deliverables.linkedin) {
+      views.linkedin = {
+        title: 'LinkedIn Post',
+        html: renderSocialMediaHtml(deliverables.linkedin, 'linkedin', orgName || 'SatyaSetu', orgIconUrl)
+      };
+    }
     if (deliverables.presentation) {
       views.presentation = {
         title: 'Presentation Deck',
@@ -996,11 +1427,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fallback if no specific deliverables were parsed
     if (Object.keys(views).length === 0) {
-      if (typeof rawContent === 'string' && (rawContent.includes('<html') || rawContent.includes('<!DOCTYPE'))) {
+      if (currentFormats.includes('twitter')) {
+        views.twitter = {
+          title: 'Twitter / X Post',
+          html: renderSocialMediaHtml(String(rawContent), 'twitter', orgName || 'SatyaSetu', orgIconUrl)
+        };
+      } else if (currentFormats.includes('linkedin')) {
+        views.linkedin = {
+          title: 'LinkedIn Post',
+          html: renderSocialMediaHtml(String(rawContent), 'linkedin', orgName || 'SatyaSetu', orgIconUrl)
+        };
+      } else if (typeof rawContent === 'string' && (rawContent.includes('<html') || rawContent.includes('<!DOCTYPE'))) {
         views.website = { title: 'Website', html: rawContent };
       } else if (typeof rawContent === 'string' && (rawContent.includes('graph ') || rawContent.includes('flowchart ') || rawContent.includes('xychart-beta'))) {
         views.mermaid = { title: 'Mermaid Diagram', html: renderMermaidHtml(rawContent) };
-      } else if (responseData?.is_presentation || /slide/i.test(promptText)) {
+      } else if ((currentFormats.includes('presentation') || responseData?.is_presentation || /slide/i.test(promptText)) && !currentFormats.includes('twitter') && !currentFormats.includes('linkedin')) {
         views.presentation = {
           title: 'Presentation Deck',
           html: generateInteractiveSlideDeck(String(rawContent), presTheme, orgName || 'SatyaSetu', orgIconUrl)
@@ -1137,7 +1578,19 @@ document.addEventListener('DOMContentLoaded', () => {
           if (deliverables.mermaid) zip.file('diagram.mmd', deliverables.mermaid);
         }
 
-        // 4. Raw text source
+        // 4. Twitter / X Post
+        if (views.twitter) {
+          zip.file('twitter_post.html', views.twitter.html);
+          if (deliverables.twitter) zip.file('tweet.txt', deliverables.twitter);
+        }
+
+        // 5. LinkedIn Post
+        if (views.linkedin) {
+          zip.file('linkedin_post.html', views.linkedin.html);
+          if (deliverables.linkedin) zip.file('linkedin_post.txt', deliverables.linkedin);
+        }
+
+        // 6. Raw text source
         if (typeof rawContent === 'string') {
           zip.file('full_output.md', rawContent);
         }
@@ -1156,11 +1609,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update in-memory chatSessions list
     const existingIdx = chatSessions.findIndex((s) => s.id === chatId);
+    const sessionConfig = (responseData && responseData.config) || (currentFormats.length > 0 ? { formats: currentFormats } : {});
     const sessionObj = {
       id: chatId,
       prompt: promptText,
       content: rawContent,
       responseData: responseData,
+      config: sessionConfig,
       timestamp: Date.now()
     };
     if (existingIdx >= 0) {
@@ -1174,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         id: chatId,
         prompt: promptText,
         responseData: responseData,
+        config: sessionConfig,
         isError: false,
         timestamp: Date.now()
       });

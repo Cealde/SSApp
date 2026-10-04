@@ -101,7 +101,10 @@ async def submit_text(payload: TextPayload):
                 pass
 
         formats = config.get("formats", [])
-        is_pres = "presentation" in formats or any(kw in payload.text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        is_pres = "presentation" in formats or (
+            ("twitter" not in formats and "linkedin" not in formats)
+            and any(kw in payload.text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        )
         
         pptx_base64 = None
         slides_data = None
@@ -121,6 +124,7 @@ async def submit_text(payload: TextPayload):
             "ai_result": ai_result,
             "message": "Generated successfully.",
             "is_presentation": is_pres and bool(pptx_base64),
+            "config": config,
         }
         if pptx_base64:
             resp["pptx_base64"] = pptx_base64
@@ -263,7 +267,10 @@ async def give_files(
                 pass
                 
         formats = config_data.get("formats", [])
-        is_pres = "presentation" in formats or any(kw in text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        is_pres = "presentation" in formats or (
+            ("twitter" not in formats and "linkedin" not in formats)
+            and any(kw in text.lower() for kw in ["presentation", "slides", "slide deck", "powerpoint"])
+        )
         
         pptx_base64 = None
         slides_data = None
@@ -286,6 +293,7 @@ async def give_files(
             "final_output": final_output,
             "ai_result": ai_result,
             "is_presentation": is_pres and bool(pptx_base64),
+            "config": config_data,
         }
         if pptx_base64:
             resp["pptx_base64"] = pptx_base64
