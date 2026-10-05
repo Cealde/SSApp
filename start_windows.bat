@@ -19,10 +19,11 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist .env (
-  copy .env.example .env >nul
-  echo Paste your NEW key after GEMINI_API_KEY=, save, and close Notepad.
-  start /wait notepad .env
+  echo .env file not found. Copy the values from keys.txt into a file named .env in this folder.
+  pause
+  exit /b 1
 )
+echo Keys loaded. Starting server...
 echo Open http://127.0.0.1:8000 in your browser.
 echo Keep this window open. Press Ctrl+C to stop.
 .venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
