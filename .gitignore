@@ -1,4 +1,5 @@
-.env
+# Allow the empty .env template and setup instructions to be committed
+!.env
 .env.*
 !.env.example
 .venv/

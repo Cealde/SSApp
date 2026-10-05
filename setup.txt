@@ -1,0 +1,15 @@
+SETUP INSTRUCTIONS
+==================
+
+1. Copy the values below into the .env file in the root of this project.
+2. Run: pip install -r requirements.txt
+3. Run: uvicorn backend.app.main:app --reload
+
+----- COPY INTO .env -----
+
+GEMINI_API_KEY='AQ.Ab8RN6KpkzPnJiJe5eiDCnprO2-rpbRs_HpjbZujJA4ow4LWaQ'
+SUPABASE_URL='https://urqhsoiadlwoqbsuiiix.supabase.co/'
+SUPABASE_PUBLISHABLE_KEY='sb_publishable_i_y1AtxvX52AzL0E86sxjA_hw18ZV9U'
+GEMINI_MODEL=gemini-3.1-flash-lite
+
+--------------------------
