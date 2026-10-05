@@ -33,27 +33,47 @@ http://127.0.0.1:8000
 
 ---
 
+## Logging In
+
+**1. Create an account**
+
+On the login page, click Sign Up. Use a real email address you have access to, choose any first name and choose a password. After submitting you will receive a confirmation email. Open that email and click the confirmation link before trying to log in.
+
+**2. Set up your organisation**
+
+After confirming your email, log in and you will be asked for an organisation name and organisation password.
+
+Use these credentials:
+
+```
+Organisation Name:     Meteorological
+Organisation Password: mtn2026
+```
+
+**3. You are in**
+
+You will land on the dashboard. Click New Project to start generating content.
+
+---
+
 ## Using the App
 
-1. Log in with your organisation credentials
-2. From the dashboard, click New Project
-3. Upload a PDF, PowerPoint or any document
-4. Select your output formats on the right (presentation, website, diagram, Twitter post, LinkedIn post)
-5. Set language, tone, audience and other options in the settings panel
-6. Type a prompt and hit send
-7. Download individual outputs or the full ZIP bundle
+1. From the dashboard, click New Project
+2. Upload a PDF, PowerPoint or any document
+3. Select your output formats on the right (presentation, website, diagram, Twitter post, LinkedIn post)
+4. Set language, tone, audience and other options in the settings panel
+5. Type a prompt and hit send
+6. Download individual outputs or the full ZIP bundle
 
 ---
 
 ## Output Formats
 
-| Format | What you get |
-|---|---|
-| Presentation | Interactive 16:9 slide deck + downloadable .pptx |
-| Website | Self-contained responsive HTML page |
-| Mermaid Diagram | Flowchart, bar chart or sequence diagram |
-| Twitter / X Post | Copy-paste ready tweet or thread |
-| LinkedIn Post | Copy-paste ready LinkedIn post |
+- **Presentation** - Interactive 16:9 slide deck with downloadable .pptx
+- **Website** - Self-contained responsive HTML page with custom colour and font selection
+- **Mermaid Diagram** - Flowchart, bar chart or sequence diagram
+- **Twitter / X Post** - Copy-paste ready tweet or thread
+- **LinkedIn Post** - Copy-paste ready LinkedIn post
 
 ---
 
